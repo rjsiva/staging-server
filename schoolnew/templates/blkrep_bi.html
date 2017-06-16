@@ -15,6 +15,7 @@
 
 
 {% block content %}
+
  <div  class="form-group" style="visibility:hide" id="dept_div" name="dept_div"><b>{% trans "Select Department for the Report:" %}</b><select id="dept_choi" class="form-control" readonly name='dept_choi' onselect="dept_rep();" onchange="dept_rep();" >
             {% if dept_opt == 1 %}
                 <option value = '1' selected="selected" >D.S.E. Report</option>
@@ -37,18 +38,19 @@
             {% endif %}
             {% endif %}                  
             {% endif %}                                
+}
+}
 </select></div>
 
  <div id="dse_rep" name="dse_rep" class="form-group" style="visibility:hide">
 
 <center><h2> School Profile - Basic Information Entry - Status Report</h2></center>
 
-
                   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
                  
                       <tr>
                         
-                        <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">BLOCK NAME</th>
+                        <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">EDN DISTRICT / <br> BLOCK NAME</th>
                         <th width=5% rowspan="2"  style="vertical-align:middle;" class="text-center">D.S.E. - No. of Schools</th>
                         <th width=5% colspan="4"  style="vertical-align:middle;" class="text-center">No. of Schools Entered Basic Information (Management-wise)</th>
                       </tr>
@@ -58,14 +60,77 @@
                         <th width=5% style="vertical-align:middle;" class="text-center">Un-Aided</th>
                         <th width=5% style="vertical-align:middle;" class="text-center">Total</th>
 </tr>
-    {% for i in bl %}
-                      <tr>
+
+{% for k in edist_mas %}
+<tr>
+ <span style="color:Green" class="pull-right"> 
+
+    <td><span style="color:Green"> {{k.edn_dist_name}} </span></td> 
+
+                        <td align="right"> 
+                        {% for j in  schlst_ed %}
+
+                        {% if j.edu_dist_id == k.edn_dist_id and j.chk_dept == 1 %}
+                        <span style="color:Green" class="pull-right">
+                            {{ j.disttot }}  
+                        </span>
+                        {% else %}
+                        {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 1  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+                        </td>
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 2  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+
+                        </td>
+
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 3  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+ 
+                        </td>  
+
+                        <td>
+                            {% for ed in  dsemansubtot_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemantot}}
+                              </span>
+                            {% endif %}
+                            {% endfor %}
+                        </td>                                              
+
+
+    {% for i in bl1 %}
+
+    {% if i.edn_dist_id = k.edn_dist_id %}
+                <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/1">{{i.block_name}}</a></td>
+                        <td><span class="pull-right"> <a href="/schoolnew/sch_rep/{{i.block_id}}/1">{{i.block.block_name}}</a> </span></td>
                         <td align="right"> 
                         {% for j in  schlst %}
-                        {% if j.block == i.id and j.chk_dept == 1 %}
-                            {{ j.schblktot }}
+
+                        {% if j.block == i.block_id and j.chk_dept == 1 %}
+                            {{ j.schblktot }}   
                         {% endif %}
                         {% endfor %}
                         </td>
@@ -73,21 +138,21 @@
 
                         <td align="right">                        
                         {% for j in  dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 1 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 1 %}
                                     {{ j.dsemdet }}
                                 {% endif %}
                         {% endfor %}
                         </td>
                         <td align="right"> 
                         {% for j in dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 2 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 2 %}
                                     {{ j.dsemdet }}
                                 {% endif %}
                         {% endfor %}
                         </td>
                         <td align="right"> 
                         {% for j in  dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 3 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 3 %}
                                     {{ j.dsemdet}}
                                 {% endif %}
                         {% endfor %}
@@ -95,14 +160,18 @@
 
                         <td align="right"> 
                         {% for j in  dsemansubtot %}
-                                {% if j.block == i.id%}
+                                {% if j.block == i.block_id%}
                                     {{ j.dsemantot}}
                                 {% endif %}
                         {% endfor %}
                         </td>
-    </tr>
+                </tr>
+        {% endif %}                
+        {% endfor %}
+                </tr>
     {% endfor %}
-    <tr>
+
+<tr>
 <th> TOTAL</th>
 
 
@@ -170,7 +239,7 @@
     {% for i in bl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/4">{{i.block_name}}</a></td>
+                        <td><span class="pull-right"><a href="/schoolnew/sch_rep/{{i.id}}/4">{{i.block_name}}</a></span></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 1 %}
@@ -486,7 +555,9 @@
 </table>
 </div>   
 <center>
-
+{% if request.user.account.user_category_id == 3 or request.user.account.user_category_id == 5 or request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12  or request.user.account.user_category_id == 13  or request.user.account.user_category_id == 14  or request.user.account.user_category_id == 20 or request.user.account.user_category_id == 21 or request.user.account.user_category_id == 22 or request.user.account.user_category_id == 23 or request.user.account.user_category_id == 24 or request.user.account.user_category_id == 25 or request.user.account.user_category_id == 26 or request.user.account.user_category_id == 27 %}
+<a  class="btn btn-large btn-info" href='/schoolnew/sch_dist_abs/{{basic_det.district_id}}'>Back</a>
+{% else %} 
 {% if dept_opt == 1 %}
 <a  class="btn btn-large btn-info" href='/schoolnew/sch_srep_bi/'>Back</a>
 {% else %} 
@@ -500,6 +571,7 @@
 <a  class="btn btn-large btn-info" href='/schoolnew/sch_srep_bi/'>Back</a>
 {% else %} 
 <a  class="btn btn-large btn-info" href='/schoolnew/sch_dist_abs/{{basic_det.district_id}}'>Back</a>
+{% endif %} 
 {% endif %} 
 {% endif %} 
 {% endif %} 

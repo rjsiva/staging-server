@@ -24,28 +24,41 @@ class teacher_leave_entry_create(View):
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             leave_code=Teacher_leave_type.objects.all()
             tid=self.kwargs.get('pk')
-            unique_id=Teacher_detail.objects.get(id=tid)
-            basic_det=Basicinfo.objects.get(school_id=unique_id.school_id)
-            school_id =unique_id.school_id
-            doj=unique_id.dofsed
-            try:
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                unique_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-                records=Teacher_leave_master.objects.get(teacherid_id=unique_id)
-                timez=records.timestamp
-                validated=timez.date()
+
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                doj=unique_id.dofsed
+                try:
+
+                    records=Teacher_leave_master.objects.get(teacherid_id=unique_id)
+                    timez=records.timestamp
+                    validated=timez.date()
+                    
+                except:
+                    msg = " First Make Leave Master "
+                    messages.warning(request, msg)
+                    return redirect('teacher_personnel_entry_after',pk=tid)
+                    family=Teacher_family_detail.objects.filter(teacherid_id=tid)
+                    
+
+                edu_list = Teacher_leave.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0: 
+                    messages.success(request, 'No Data') 
                 
-            except:
-                msg = " First Make Leave Master "
-                messages.warning(request, msg)
+                return render(request,'teachers/leave/teacher_leave_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
                 return redirect('teacher_personnel_entry_after',pk=tid)
-                family=Teacher_family_detail.objects.filter(teacherid_id=tid)
-                
 
-            edu_list = Teacher_leave.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0: 
-                messages.success(request, 'No Data') 
-            
-            return render(request,'teachers/leave/teacher_leave_form.html',locals())
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -388,23 +401,40 @@ class teacher_leave_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             tid1=self.kwargs.get('pk1')
-            unique_id=Teacher_detail.objects.get(id=tid)  
-            school_id =unique_id.school_id
-            instance=Teacher_leave.objects.get(id=tid1)
-            form=Teacher_leaveform(instance=instance)
-            edu_list = Teacher_leave.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request,'No Data')        
-            leave_code=Teacher_leave_type.objects.all()         
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-      
-            teacherid_id = instance.teacherid_id
-            leave_type = instance.leave_type        
-            leave_from=instance.leave_from        
-            leave_to = instance.leave_to  
-            order_no = instance.order_no  
-            order_date =instance.order_date         
-            return render(request,'teachers/leave/teacher_leave_form.html',locals()) 
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                unique_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+                if (Teacher_leave.objects.filter(id=tid1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_leave.objects.get(id=tid1,teacherid_id=tid)
+                    form=Teacher_leaveform(instance=instance)
+                    edu_list = Teacher_leave.objects.filter(teacherid_id=tid)
+                    if edu_list.count()==0:
+                        messages.success(request,'No Data')        
+                    leave_code=Teacher_leave_type.objects.all()         
+                    basic_det=Basicinfo.objects.get(school_id=unique_id.school_id)
+              
+                    teacherid_id = instance.teacherid_id
+                    leave_type = instance.leave_type        
+                    leave_from=instance.leave_from        
+                    leave_to = instance.leave_to  
+                    order_no = instance.order_no  
+                    order_date =instance.order_date         
+                    return render(request,'teachers/leave/teacher_leave_form.html',locals()) 
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

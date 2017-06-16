@@ -14,18 +14,27 @@ urlpatterns = patterns('',
        view=teacher_promotion.as_view(),
        name='teacher_promotion'
    ),
-    
     url(
-        regex=r'^teachers_unique_id_generation/$',
-        view=Teachers_unique_id_generation.as_view(),
-        name='Teachers_unique_id_generation'
+       regex=r'^vaccant_post_details_tr/(?P<cat_id>\d+?)/$',
+       view=vaccant_post_details_tr.as_view(),
+       name='vaccant_post_details_tr'
     ),
+    url(
+       regex=r'^vaccant_post_details_tr/$',
+       view=vaccant_post_details_tr.as_view(),
+       name='vaccant_post_details_tr'
+    ),
+    # url(
+    #     regex=r'^teachers_unique_id_generation/$',
+    #     view=Teachers_unique_id_generation.as_view(),
+    #     name='Teachers_unique_id_generation'
+    # ),
 
-    url(
-        regex=r'^teachers_block_level_reports/$',
-        view=Teachers_block_level_reports.as_view(),
-        name='teachers_block_level_reports'
-    ),
+    # url(
+    #     regex=r'^teachers_block_level_reports/$',
+    #     view=Teachers_block_level_reports.as_view(),
+    #     name='teachers_block_level_reports'
+    # ),
 
     url(
        regex=r'^download_staff_list/$',
@@ -39,17 +48,17 @@ urlpatterns = patterns('',
         view=Teacher_new_entry.as_view(),
         name='teacher_new_entry'
     ),
-    url(
-        regex=r'^teacher_registration/$',
-        view=Teacher_registration.as_view(),
-        name='teacher_registration'
-    ),
+    # url(
+    #     regex=r'^teacher_registration/$',
+    #     view=Teacher_registration.as_view(),
+    #     name='teacher_registration'
+    # ),
 
-    url(
-        regex=r'^teacher_personnel_entry/$',
-        view=Teacher_personnel_entry.as_view(),
-        name='teacher_personnel_entry'
-    ),
+    # url(
+    #     regex=r'^teacher_personnel_entry/$',
+    #     view=Teacher_personnel_entry.as_view(),
+    #     name='teacher_personnel_entry'
+    # ),
 
     
     url(
@@ -96,13 +105,13 @@ urlpatterns = patterns('',
 
    
     url(
-        regex=r'^Teacher_transfer/(?P<pk>\d+?)/school_search10/$',
+        regex=r'^Teacher_transfer/(?P<code>\d+?)/(?P<office_code>\d+?)/(?P<pk>\d+?)/school_search10/$',
         view=school_search10.as_view(),
         name='school_search10'
     ),
 
     url(
-        regex=r'^Teacher_transfer/(?P<pk>\d+?)/$',
+        regex=r'^Teacher_transfer/(?P<code>\d+?)/(?P<office_code>\d+?)/(?P<pk>\d+?)/$',
         view=Teacher_transfer.as_view(),
         name='Teacher_transfer'
     ),
@@ -166,7 +175,7 @@ url(
 
     
     
-    url(r'^/teachers/views/fetch_id/$','teachers/fetch_id',name='fetch_id'),
+    # url(r'^/teachers/views/fetch_id/$','teachers/fetch_id',name='fetch_id'),
 )
 
 

@@ -24,18 +24,29 @@ class Teacher_training_create(View):
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             tid=self.kwargs.get('pk')    
             print tid    
-            staff_id = Teacher_detail.objects.get(id = tid)          
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count      
-            edu_list = Teacher_training.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request, 'No Data')
-            teachers_posting_list = Teacher_training.objects.filter(teacherid_id=tid) 
-            return render(request,'teachers/training/teacher_training_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count      
+                edu_list = Teacher_training.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0:
+                    messages.success(request, 'No Data')
+                teachers_posting_list = Teacher_training.objects.filter(teacherid_id=tid) 
+                return render(request,'teachers/training/teacher_training_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -83,22 +94,40 @@ class teacher_training_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid) 
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count           
-            instance=Teacher_training.objects.get(id=pk1)        
-            form = Teacher_trainingform(instance=instance)
-            teacherid_id = instance.teacherid_id        
-            course=instance.course
-            institution = instance.institution  
-            city =instance.city
-            country =instance.country
-            duration_from =instance.duration_from
-            duration_to =instance.duration_to
-            return render(request,'teachers/training/teacher_training_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count           
+                if(Teacher_training.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_training.objects.get(id=pk1,teacherid_id=tid)        
+                    form = Teacher_trainingform(instance=instance)
+                    teacherid_id = instance.teacherid_id        
+                    course=instance.course
+                    institution = instance.institution  
+                    city =instance.city
+                    country =instance.country
+                    duration_from =instance.duration_from
+                    duration_to =instance.duration_to
+                    return render(request,'teachers/training/teacher_training_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+            
+
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

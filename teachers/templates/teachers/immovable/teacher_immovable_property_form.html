@@ -254,13 +254,13 @@ DETAILS OF IMMOVABLE PROPERTY</h5></center>
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none">{{ staff_name|upper }} </td>
         <td> {{ i.prop_description|upper }}</td>
         <td> {{ i.doc_number |upper}}</td>
-        <td> {{ i.doc_date }}</td>
+        <td> {{ i.doc_date  |date:"d-m-Y" }}</td>
         <td> {{ i.place|upper }}</td>
         <td> {{ i.acquired_source |upper}}</td>
         <td> {{ i.purchase_value }}</td>
         <td> {{ i.present_value }}</td>
         <td> {{ i.order_no |upper}}</td>
-        <td> {{ i.order_date }}</td>
+        <td> {{ i.order_date  |date:"d-m-Y" }}</td>
         <td><a  href="/teachers/teacher_immovable_update/{{tid}}/{{i.id}}/"><button type="button" class="btn btn-warning">Update</button></a></td>
         
         {% endfor %}

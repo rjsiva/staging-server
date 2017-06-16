@@ -8,6 +8,9 @@ from django.db import *
 from datetime import datetime
 from django.contrib.auth import authenticate, login
 from django.views.decorators.cache import never_cache
+from django.http import HttpResponse
+from django.shortcuts import redirect
+
 
 
 class Teacher_loan_create(View):
@@ -21,17 +24,29 @@ class Teacher_loan_create(View):
             AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             form=Teacher_loanform()
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)  
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id            
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count        
-            teach_loan=Teacher_loan_category.objects.all()
-            edu_list = Teacher_loan.objects.filter(teacherid_id=tid)       
-            if edu_list.count()==0: 
-                messages.success(request, 'No Data') 
-            return render(request,'teachers/loan/teacher_loan_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+          
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count        
+                teach_loan=Teacher_loan_category.objects.all()
+                edu_list = Teacher_loan.objects.filter(teacherid_id=tid)       
+                if edu_list.count()==0: 
+                    messages.success(request, 'No Data') 
+                return render(request,'teachers/loan/teacher_loan_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
           return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
    
@@ -82,27 +97,44 @@ class teacher_loan_update(View):
             school_id = request.user.account.associated_with
             tid=self.kwargs.get('pk')  
             pk1=self.kwargs.get('pk1')      
-            staff_id = Teacher_detail.objects.get(id = tid)     
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id            
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
          
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count        
-            instance=Teacher_loan.objects.get(id=pk1)       
-            teach_loan=Teacher_loan_category.objects.all()
-            form = Teacher_loanform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            loan_category = instance.loan_category
-            loan_purpose=instance.loan_purpose
-            sanctioned_amt = instance.sanctioned_amt  
-            installments =instance.installments
-            monthly_installment =instance.monthly_installment
-            first_insta_date =instance.first_insta_date
-            sanctioned_order =instance.sanctioned_order
-            sanctioned_date =instance.sanctioned_date         
-            return render(request,'teachers/loan/teacher_loan_form.html',locals())
+         
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count      
+                if (Teacher_loan.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    teach_loan=Teacher_loan_category.objects.all()
+                    instance=Teacher_loan.objects.get(id=pk1,teacherid_id=tid)       
+                    teach_loan=Teacher_loan_category.objects.all()
+                    form = Teacher_loanform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    loan_category = instance.loan_category
+                    loan_purpose=instance.loan_purpose
+                    sanctioned_amt = instance.sanctioned_amt  
+                    installments =instance.installments
+                    monthly_installment =instance.monthly_installment
+                    first_insta_date =instance.first_insta_date
+                    sanctioned_order =instance.sanctioned_order
+                    sanctioned_date =instance.sanctioned_date         
+                    return render(request,'teachers/loan/teacher_loan_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+                
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

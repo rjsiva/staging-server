@@ -27,11 +27,7 @@
 
 </style>
 
-<script type = "text/javascript" >
-   function preventBack(){window.history.forward();}
-    setTimeout("preventBack()", 0);
-    window.onunload=function(){null};
-</script>
+
 <center><h3 style="color:red">Name of the School / Office : {{basic_det.school_name}}</h3></center><br>
 {% if AEOENTRY == 1 %}
 
@@ -71,7 +67,7 @@
         <td id="k"> {{ i.post_sub}}</td>
         <td id="k"> {{ i.post_mode}}</td>
          <td id="k"> {{ i.post_GO}}</td>
-        <td id="k"> {{ i.post_GO_dt}}</td>
+        <td id="k"> {{ i.post_GO_dt  |date:"d-m-Y"}}</td>
         <td id="k"> {{ i.post_sanc}}</td>
        
    
@@ -126,7 +122,7 @@
        
         <td id="k"> {{ i.post_mode}}</td>
          <td id="k"> {{ i.post_GO}}</td>
-        <td id="k"> {{ i.post_GO_dt}}</td>
+        <td id="k"> {{ i.post_GO_dt  |date:"d-m-Y"}}</td>
         <td id="k"> {{ i.post_sanc}}</td>
        
    
@@ -180,7 +176,7 @@
         <td id="k"> {{ i.post_sub}}</td>
         <td id="k"> {{ i.post_mode}}</td>
          <td id="k"> {{ i.post_GO}}</td>
-        <td id="k"> {{ i.post_GO_dt}}</td>
+        <td id="k"> {{ i.post_GO_dt  |date:"d-m-Y"}}</td>
         <td id="k"> {{ i.post_sanc}}</td>
        
    
@@ -244,7 +240,7 @@
        
         <td id="k"> {{ i.post_mode}}</td>
          <td id="k"> {{ i.post_GO}}</td>
-        <td id="k"> {{ i.post_GO_dt}}</td>
+        <td id="k"> {{ i.post_GO_dt  |date:"d-m-Y"}}</td>
         <td id="k"> {{ i.post_sanc}}</td>
        
    

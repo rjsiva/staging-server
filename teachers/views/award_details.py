@@ -19,23 +19,34 @@ class award_create(View):
         if request.user.is_authenticated():
             # school_id = request.user.account.associated_with
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)          
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id    
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count           
-            desig=Teacher_posting_entry.objects.all()
-            month_value=Months.objects.all()
-         
-            exams=Awards.objects.all()
-            camps=Award_Level.objects.all()
-            form=Teacher_award_form()       
-            edu_list = Teacher_award.objects.filter(teacherid_id=tid)      
-            if edu_list.count()==0:
-                messages.success(request, 'No Data')       
-            return render(request,'teachers/award/award_details.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+ 
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count           
+                desig=Teacher_posting_entry.objects.all()
+                month_value=Months.objects.all()
+             
+                exams=Awards.objects.all()
+                camps=Award_Level.objects.all()
+                form=Teacher_award_form()       
+                edu_list = Teacher_award.objects.filter(teacherid_id=tid)      
+                if edu_list.count()==0:
+                    messages.success(request, 'No Data')       
+                return render(request,'teachers/award/award_details.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -90,21 +101,32 @@ class award_update(View):
             month_value=Months.objects.all()
             exams=Awards.objects.all()
             camps=Award_Level.objects.all()
-            staff_id = Teacher_detail.objects.get(id = tid)          
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id    
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count   
-            instance=Teacher_award.objects.get(id=pk1)
-            form = Teacher_award_form(instance=instance)        
-            teacherid_id = instance.teacherid_id
-            award_name=instance.award_name
-            level=instance.level
-            year=instance.year
-            remarks=instance.remarks           
-            return render(request,'teachers/award/award_details.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count   
+                if (Teacher_award.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_award.objects.get(id=pk1,teacherid_id=tid)
+                    form = Teacher_award_form(instance=instance)        
+                    teacherid_id = instance.teacherid_id
+                    award_name=instance.award_name
+                    level=instance.level
+                    year=instance.year
+                    remarks=instance.remarks           
+                    return render(request,'teachers/award/award_details.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

@@ -180,16 +180,27 @@
                   if(recog_stat == 'Temporary')
                   {
                     document.getElementById('recog_fm').style.display = "";
-                    document.getElementById('recog_to').style.display = "";                
+                    document.getElementById('recog_to').style.display = "";
+                    document.getElementById('recog_ordno_div').style.display = "";
+
                   } 
-                  else 
+                  else if(recog_stat == 'Permanent')
                   {
                     document.getElementById('recog_fm').style.display = "none";
                     document.getElementById('recog_to').style.display = "none";
-
+                    document.getElementById('recog_ordno_div').style.display = "";
                   }
+
+                  else
+                  {
+                    document.getElementById('recog_fm').style.display = "none";
+                    document.getElementById('recog_to').style.display = "none";
+                    document.getElementById('recog_ordno_div').style.display = "none";
+                  }
+                  
               }
-            }     
+            } 
+
         }
 
  function tem_recog2()
@@ -206,14 +217,22 @@
                   if(recog_stat == 'Temporary')
                   {
                     document.getElementById('hssrecog_fm').style.display = "";
-                    document.getElementById('hssrecog_to').style.display = "";                
+                    document.getElementById('hssrecog_to').style.display = "";
+                    document.getElementById('hssrecog_ordno_div').style.display ="";                            
                   } 
-                  else 
+                  else if(recog_stat == 'Permanent')
                   {
                     document.getElementById('hssrecog_fm').style.display = "none";
                     document.getElementById('hssrecog_to').style.display = "none";
-
+                    document.getElementById('hssrecog_ordno_div').style.display = "";
                   }
+
+                  else
+                  {
+                    document.getElementById('hssrecog_fm').style.display = "none";
+                    document.getElementById('hssrecog_to').style.display = "none";
+                    document.getElementById('hssrecog_ordno_div').style.display = "none";
+                  }                  
               }
             }     
         }  
@@ -231,14 +250,21 @@ function tem_recog3()
                   if(recog_stat == 'Temporary')
                   {
                     document.getElementById('obhssrecog_fm').style.display = "";
-                    document.getElementById('obhssrecog_to').style.display = "";                
+                    document.getElementById('obhssrecog_to').style.display = "";
+                    document.getElementById('obhssrecog_ordno_div').style.display = "";             
                   } 
+                  else if(recog_stat == 'Permanent')
+                  {
+                    document.getElementById('obhssrecog_fm').style.display = "none";
+                    document.getElementById('obhssrecog_to').style.display = "none";
+                    document.getElementById('obhssrecog_ordno_div').style.display = "";
+                  }
                   else 
                   {
                     document.getElementById('obhssrecog_fm').style.display = "none";
                     document.getElementById('obhssrecog_to').style.display = "none";
-
-                  }
+                    document.getElementById('obhssrecog_ordno_div').style.display = "none";                   
+                  }                  
               }
             }     
         }                 
@@ -347,8 +373,6 @@ function tem_recog3()
             {
                 document.getElementById('obhssrecog_ordno_div').style.display = "";
                 document.getElementById('obhssrecog_typ_div').style.display = "";  
-                // document.getElementById('obhssrecog_fm').style.display = "";
-                // document.getElementById('obhssrecog_to').style.display = "";
                 document.getElementById('hssdge_12div').style.display = "";;
 
             } 
@@ -356,8 +380,6 @@ function tem_recog3()
             else {
                 document.getElementById('obhssrecog_ordno_div').style.display = "none";
                 document.getElementById('obhssrecog_typ_div').style.display = "none";  
-                // document.getElementById('obhssrecog_fm').style.display = "none";
-                // document.getElementById('obhssrecog_to').style.display = "none"; 
                 document.getElementById('hssdge_12div').style.display = "none"; 
                 var obtemrecogfm = document.getElementById("hssrecog_dt_fm");
                 var obtemrecogto = document.getElementById("hssrecog_dt_to");
@@ -505,12 +527,20 @@ $(document).ready(function(){
 <script type="text/javascript">
 $(document).ready(function(){
   tem_recog1();
-  tem_recog2();
-  tem_recog3();
 
    });
 </script>
 
+<script type="text/javascript">
+$(document).ready(function(){
+  tem_recog2();
+   });
+</script>
+<script type="text/javascript">
+$(document).ready(function(){
+  tem_recog3();
+   });
+</script>
 
 <script type="text/javascript">
 $(document).ready(function(){
@@ -532,6 +562,12 @@ $(document).ready(function(){
    });
 </script>
 
+<script type="text/javascript">
+$(document).ready(function(){
+    splsch();
+
+   });
+</script>
 
 <script type="text/javascript">
 $(document).ready(function(){
@@ -543,12 +579,7 @@ $(document).ready(function(){
 });
 </script>
 
-<script type="text/javascript">
-$(document).ready(function(){
-    splsch();
 
-   });
-</script>
 
 <script type="text/javascript">
 function date_future_chk(inpid)
@@ -884,9 +915,11 @@ function chk_fmto_Date1()
 <div  class="form-group" style="visibility:hide" id="minority_div1" name="minority_div1"><strong style="color:red;">*</strong> <b>{% trans "Type of Minority:" %}</b><select id="id_mino_type" name="mino_type" class="form-control mandatory">
         {% if rel_minority == True %}
         <option value="Religious Minority" selected="selected">Religious Minority</option>
+        <option value="Linguistic Minority">Linguistic Minority</option>        
         {% else %}
         {% if ling_minority == True %}
         <option value="Linguistic Minority" selected="selected">Linguistic Minority</option>
+        <option value="Religious Minority">Religious Minority</option>        
         {% else %}
 
         <option value="" selected="selected">Select</option><option value='Religious Minority'>Religious Minority</option><option value='Linguistic Minority'>Linguistic Minority</option>
@@ -917,14 +950,14 @@ function chk_fmto_Date1()
 
  {% if gov_chk == 'Yes' %}
  <br>
-        <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "G.O. No. & Date by which the School was Sanctioned (Upto X Standard):" %}</b><input id="id_start_order" name="start_order" value="{{start_order}}" class="form-control" type="text"  maxlength="200" style="text-transform:uppercase"></div><span class="error_message">{{form.start_order.errors}}</span> 
+        <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "G.O. No. & Date by which the School was Sanctioned:" %}</b><input id="id_start_order" name="start_order" value="{{start_order}}" class="form-control" type="text"  maxlength="200" style="text-transform:uppercase"></div><span class="error_message">{{form.start_order.errors}}</span> 
 
         <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "Year of School Started:" %}</b><input id="start_yr" name="start_yr" value="{{start_yr}}" class="form-control" type="text"  maxlength="10" style="text-transform:uppercase"></div><span class="error_message">{{form.start_yr.errors}}</span>         
 
 {% if high_class = 'XII Std' %}
         <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "G.O. No. & Date by which the School was sanctioned Higher Secondary Sections (+1,+2):" %}</b><input id="hssstart_order" name="hssstart_order" value="{{hssstart_order}}" class="form-control" type="text" maxlength="200" style="text-transform:uppercase"></div><span class="error_message">{{form.hssstart_order.errors}}</span>
 
-        <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "Year of Higher Secondary Sections Started:(+1,+2):" %}</b><input id="hssstart_yr" name="hssstart_yr" value="{{hssstart_yr}}" class="form-control" type="text" maxlength="10" style="text-transform:uppercase"></div><span class="error_message">{{form.hssstart_yr.errors}}</span>          
+        <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "Year of Higher Secondary Sections Started:(+1,+2):" %}</b><input id="hssstart_yr" name="hssstart_yr" value="{{hssstart_yr}}" class="form-control mandatory" type="text" maxlength="10" style="text-transform:uppercase"></div><span class="error_message">{{form.hssstart_yr.errors}}</span>          
 
  {% endif %}
 
@@ -935,32 +968,37 @@ function chk_fmto_Date1()
 {% if high_class = 'XII Std' %}
 
         <div class="form-group" id="est_year_div" style="visibility:hide" name="est_year_div"><b>{% trans "Permission details by which the school was permitted to Higher Secondary Sections (+1,+2):" %}</b><input id="id_hssstart_order" name="hssstart_order" value="{{hssstart_order}}" class="form-control mandatory" type="text" maxlength="200" style="text-transform:uppercase"></div><span class="error_message">{{form.start_order.errors}}</span> 
+        
+        <div class="form-group" id="est_year_div" name="est_year_div"><b>{% trans "Year of Higher Secondary Sections Started:(+1,+2):" %}</b><input id="hssstart_yr" name="hssstart_yr" value="{{hssstart_yr}}" class="form-control mandatory" type="text" maxlength="10" style="text-transform:uppercase"></div><span class="error_message">{{form.hssstart_yr.errors}}</span>         
 {% endif %}     
 
 {% endif %}  
 
 {% if board = 'State Board' %}
- 
+
+      <input type="hidden" name="board" id="board" value="{{board}}">
     {% if gov_chk == 'Yes' %}
       <div class="form-group" style="visibility:hide" id='dt_none1'> 
       <input type="hidden" name="recog_dt_fm" id="recog_dtfm" value="{{ recog_dtfm }}">
       <input type="hidden" name="recog_dt_to" id="recog_dtto" value="{{ recog_dtto }}">
       </div>
     {% else %} 
-
-        <div class="form-group" style="visibility:hide" id="recog_ordno_div" name="recog_typ_div"> <b>{% trans "Recognition order No. & Date for Upto X Std (Max 200 Characters):" %}</b><input id="id_recog_ord" name="recog_ord" value="{{recog_ord}}" class="form-control mandatory" maxlength="200" type="text"></div><span class="error_message">{{form.recog_ord.errors}}</span> 
-
  
-        <div class="form-group" style="visibility:hide" id="recog_typ_div" name="recog_typ_div"> <b>{% trans "Type of Recognition Accorded to the School by the Govt. (Upto X Std):" %}</b><select id="id_recog_typ" name='recog_typ' onchange="tem_recog1();" class="form-control mandatory" onblur="tem_recog1();" class="form-control">
+        <div class="form-group" style="visibility:hide" id="recog_typ_div" name="recog_typ_div"> <b>{% trans "Type of Recognition Accorded to the School by the Govt. (Upto X Std..):" %}</b><select id="id_recog_typ" name='recog_typ' onchange="tem_recog1();" class="form-control mandatory" onblur="tem_recog1();" class="form-control">
                 {% if recog_typ == 'Permanent' %}
                 <option value='{{recog_typ}}' selected="selected">{{recog_typ}}</option>
                 {% endif %}
                 {% if recog_typ == 'Temporary' %}
                 <option value='{{recog_typ}}' selected="selected">{{recog_typ}}</option>
-                {% endif %}                
-        <option value="">Select</option><option>Permanent</option><option>Temporary</option></select>
+                {% endif %}  
+                {% if recog_typ == 'Unrecognized' %}
+                <option value='{{recog_typ}}' selected="selected">{{recog_typ}}</option>
+                {% endif %}                               
+        <option value="">Select</option><option>Permanent</option><option>Temporary</option><option>Unrecognized</option></select>
         </div><span class="error_message">{{form.recog_typ.errors}}</span> <br>
 
+
+        <div class="form-group" style="visibility:hide" id="recog_ordno_div" name="recog_typ_div"> <b>{% trans "Recognition order No. & Date for Upto X Std (Max 200 Characters):" %}</b><input id="id_recog_ord" name="recog_ord" value="{{recog_ord}}" class="form-control mandatory" maxlength="200" type="text"></div><span class="error_message">{{form.recog_ord.errors}}</span> 
 
 <div class="form-group" style="visibility:hide" id='recog_fm'> <b><strong style="color:red;">*</strong>{% trans "Temporary Recognition Accorded by Govt. (Upto X Std): From Date:" %}</b><input type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'"  class="form-control mandatory " id="recog_dt_fm" name="recog_dt_fm"  value="{{form.recog_dt_fm.value|date:"d/m/Y" }}"  onblur="date_future_chk('recog_dt_fm')" maxlength="10"/></div>
 <span class="error_message">{{form.recog_dt_fm.errors}}</span>
@@ -988,22 +1026,23 @@ function chk_fmto_Date1()
 
 {% if high_class = 'XII Std' %}
 
-   <div class="form-group" style="visibility:hide" id="hssrecog_ordno_div" name="recog_typ_div"> <b>{% trans "Higher Secondary-Recognition order No. & Date (Max 200 Characters):" %}</b><input id="hssid_recog_ord" name="hssrecog_ord" maxlength="200" value="{{form.recog_ord.value}}" class="form-control mandatory" type="text"></div><span class="error_message">{{form.hssrecog_ord.errors}}</span> 
 
- 
-    <div class="form-group" style="visibility:hide" id="hssrecog_typ_div" name="hssrecog_typ_div"> <b>{% trans "Higher Secondary-Type of Recognition Accorded to this School by the Govt. (For XI & XII Stds):" %}</b><select id="hssid_recog_typ" name='hssrecog_typ' onchange="tem_recog2();" onblur="tem_recog2();" class="form-control">
+    <div class="form-group" style="visibility:hide" id="hssrecog_typ_div" name="hssrecog_typ_div"> <b>{% trans "Higher Secondary - Type of Recognition Accorded to this School by the Govt. (For XI & XII Stds only):" %}</b><select id="hssid_recog_typ" name='hssrecog_typ' onchange="tem_recog2();" onblur="tem_recog2();" class="form-control">
                 {% if hssrecog_typ == 'Permanent' %}
                 <option value="{{hssrecog_typ}}" selected="selected">{{hssrecog_typ}}</option>
                 {% endif %}
                 {% if hssrecog_typ == 'Temporary' %}
                 <option value="{{hssrecog_typ}}" selected="selected">{{hssrecog_typ}}</option>
                 {% endif %}
-
-         <option value="">Select</option><option>Permanent</option><option>Temporary</option></select>
+                {% if recog_typ == 'Unrecognized' %}
+                <option value='{{recog_typ}}' selected="selected">{{recog_typ}}</option>
+                {% endif %}  
+         <option value="">Select</option><option>Permanent</option><option>Temporary</option><option>Unrecognized</option></select>
         </div><span class="error_message">{{form.hssrecog_typ.errors}}</span> <br>
 
+   <div class="form-group" style="visibility:hide" id="hssrecog_ordno_div" name="recog_typ_div"> <b>{% trans "Higher Secondary- Recognition order No. & Date (Max 200 Characters):" %}</b><input id="hssid_recog_ord" name="hssrecog_ord" maxlength="200" value="{{form.recog_ord.value}}" class="form-control mandatory" type="text"></div><span class="error_message">{{form.hssrecog_ord.errors}}</span> 
 
-  <div class="form-group" style="visibility:hide" id='hssrecog_fm'> <b><strong style="color:red;">*</strong>{% trans "Temporary Recognition Accorded by Govt.(For XI & XII Stds)  From date:" %}</b><input type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'"  class="form-control mandatory " id="hssrecog_dt_fm" name="hssrecog_dt_fm"  value="{{form.hssrecog_dt_fm.value|date:"d/m/Y" }}"  onblur="date_future_chk('hssrecog_dt_fm')" maxlength="10"/></div>
+   <div class="form-group" style="visibility:hide" id='hssrecog_fm'> <b><strong style="color:red;">*</strong>{% trans "Temporary Recognition Accorded by Govt.(For XI & XII Stds)  From date:" %}</b><input type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'"  class="form-control mandatory " id="hssrecog_dt_fm" name="hssrecog_dt_fm"  value="{{form.hssrecog_dt_fm.value|date:"d/m/Y" }}"  onblur="date_future_chk('hssrecog_dt_fm')" maxlength="10"/></div>
       <span class="error_message">{{form.hssrecog_dt_fm.errors}}</span>
 
   <div class="form-group" style="visibility:hide" id='hssrecog_to'> <b><strong style="color:red;">*</strong>{% trans "Recognition - To Date:" %}</b><input type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'"  class="form-control mandatory " id="hssrecog_dt_to" name="hssrecog_dt_to"  value="{{form.hssrecog_dt_to.value|date:"d/m/Y" }}"  onblur="chk_fmto_Date1()" maxlength="10"/></div>
@@ -1020,9 +1059,9 @@ function chk_fmto_Date1()
     <span class="error_message">{{form.hssrecog_dt_to.errors}}</span> -->
 
 
-<div class="form-group"   id="dge_10div" > <b>{% trans "School Code No. for DGE X Std Examinations:" %}</b><input id="dge_no_ten" name="dge_no_ten" type="text" value= "{{dge_no_ten}}" class="form-control mandatory" /></div><span class="error_message">{{form.dge_no_ten.errors}}</span>
+<div class="form-group"   id="dge_10div" > <b>{% trans "DGE School Code No. for Tamilnadu Board Examinations:" %}</b><input id="dge_no_ten" name="dge_no_ten" type="text" value= "{{dge_no_ten}}" class="form-control mandatory" /></div><span class="error_message">{{form.dge_no_ten.errors}}</span>
 
-<div class="form-group" id="dge_12div" > <b>{% trans "School Code No. for DGE XII Std Examinations:" %}</b><input id="dge_no_twelve" name="dge_no_twelve" type="text" value= "{{dge_no_twelve}}" class="form-control mandatory" /></div><span class="error_message">{{form.dge_no_twelve.errors}}</span>  
+
 
 {% endif %}
 
@@ -1049,6 +1088,7 @@ function chk_fmto_Date1()
 {% if high_class = 'XII Std' %}
     <div class="form-group" > <b>{% trans "Details of Board followed in Higher Secondary Sections (XI & XII):" %}</b><select id="hssboard" name="hssboard" onchange="obhssdiv();" onblur="obhssdiv();" class="form-control mandatory" >
                 {% if hssboard %}
+                
                  {% else %}
                 <option value="" selected="selected">Select</option>
                 <option value="State Board">State Board</option>
@@ -1094,7 +1134,6 @@ function chk_fmto_Date1()
                 {% endif %}                                                                
                 </select></div><span class="error_message">{{form.hssboard.errors}}</span>
 
-   <div class="form-group" style="visibility:hide" id="obhssrecog_ordno_div" name="recog_typ_div"> <b>{% trans "Hr. Sec. Sections Recognition order No. & Date (Max 200 Characters):" %}</b><input id="hssid_recog_ord" maxlength="200" name="hssrecog_ord" value="{{hssrecog_ord}}" class="form-control mandatory" type="text"></div><span class="error_message">{{form.hssrecog_ord.errors}}</span> 
 
  
     <div class="form-group" style="visibility:hide" id="obhssrecog_typ_div" name="hssrecog_typ_div"> <b>{% trans "Hr. Sec. Sections Type of Recognition Accorded to this School by the Govt.:" %}</b><select id="obhssid_recog_typ" name='hssrecog_typ' onchange="tem_recog3();" onblur="tem_recog3();" class="form-control mandatory">
@@ -1104,8 +1143,13 @@ function chk_fmto_Date1()
                 {% if hssrecog_typ == 'Temporary' %}
                 <option value = Temporary selected="selected">Temporary</option>
                 {% endif %}
-                <option value="">Select</option><option>Temporary</option><option>Permanent</option></select>
+                {% if recog_typ == 'Unrecognized' %}
+                <option value='{{recog_typ}}' selected="selected">{{recog_typ}}</option>
+                {% endif %}            
+                <option value="">Select</option><option>Temporary</option><option>Permanent</option><option>Unrecognized</option></select>
                 </div><span class="error_message">{{form.hssrecog_typ.errors}}</span> <br>
+
+   <div class="form-group" style="visibility:hide" id="obhssrecog_ordno_div" name="recog_typ_div"> <b>{% trans "Hr. Sec. Sections Recognition order No. & Date (Max 200 Characters):" %}</b><input id="hssid_recog_ord" maxlength="200" name="hssrecog_ord" value="{{hssrecog_ord}}" class="form-control mandatory" type="text"></div><span class="error_message">{{form.hssrecog_ord.errors}}</span> 
 
 
 <div class="form-group" style="visibility:hide" id='obhssrecog_fm'> <b><strong style="color:red;">*</strong>{% trans "Hr. Sec. Sections Temporary Recognition Accorded by Govt:. for the Period From (date):" %}</b><input type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'"  class="form-control mandatory " id="hssrecog_dt_fm" name="hssrecog_dt_fm"  value="{{form.hssrecog_dt_fm.value|date:"d/m/Y" }}"  onblur="date_future_chk('hssrecog_dt_fm')" maxlength="10"/></div>
@@ -1127,7 +1171,7 @@ function chk_fmto_Date1()
     <span class="error_message">{{form.hssrecog_dt_to.errors}}</span> -->
 
   
-<div class="form-group" style="visibility:hide" id="hssdge_12div" > <b>{% trans "School Code No. for DGE XII Std Examinations:" %}</b><input id="dge_no_twelve" name="dge_no_twelve" type="text" value= "{{dge_no_twelve}}" class="form-control mandatory" /></div><span class="error_message">{{form.dge_no_twelve.errors}}</span>  
+<div class="form-group" style="visibility:hide" id="hssdge_12div" > <b>{% trans "DGE School Code No. for Tamilnadu Board Examinations:" %}</b><input id="dge_no_ten" name="dge_no_ten" type="text" value= "{{dge_no_ten}}" class="form-control mandatory" /></div><span class="error_message">{{form.dge_no_ten.errors}}</span>  
 
                 
 {% endif %} 
@@ -1268,7 +1312,7 @@ function chk_fmto_Date1()
             {% if extra_scout %}
                 <option value="{{extra_scout}}" selected="selected">{{extra_scout}}</option>
             {% endif %} 
-        <option value="">Select</option><option>Established and Functioning</option><option>Not established</option></select></div><span class="error_message">{{form.extra_scout.errors}}</span>
+        <option value="">Select</option><option>Established</option><option>Not established</option></select></div><span class="error_message">{{form.extra_scout.errors}}</span>
    
 <br><br>
 

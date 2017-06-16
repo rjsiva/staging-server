@@ -340,7 +340,7 @@ function AfterDate1(val)
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none">{{ i.teacherid.name | upper }} </td>
         <td> {{ i.designation.designation |upper }}</td>
         <td> {{ i.order_no|upper }}</td>
-        <td> {{ i.order_date }}</td>
+        <td> {{ i.order_date  |date:"d-m-Y" }}</td>
         <td> {{ i.date_of_regularisation}} / {{i.doregu_session}}</td>
         <td><a href="/teachers/teacher_regularisation_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td>
         

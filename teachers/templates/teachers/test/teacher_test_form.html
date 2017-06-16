@@ -380,10 +380,10 @@ function AfterDate(val)
 
         <td> {{ i.tests_passed|upper }}</td> 
         <td> {{ i.month |upper }}</td> 
-        <td> {{ i.year }}</td> 
+        <td> {{ i.year   }}</td> 
         <td> {{ i.reg_no|upper }}</td> 
         <td> {{ i.gaz_no |upper}}</td> 
-        <td> {{ i.gaz_date }}</td> 
+        <td> {{ i.gaz_date  |date:"d-m-Y" }}</td> 
         <td> {{ i.page_no }}</td> 
 
         <td><a href="/teachers/teacher_test_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td> 

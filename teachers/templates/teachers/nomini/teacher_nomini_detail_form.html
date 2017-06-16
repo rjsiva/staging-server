@@ -482,7 +482,7 @@ DETAILS OF FINANCIAL NOMINATION</h6></center>
  </form>
 <br>
  <form action="" method="POST"> 
-
+{% if edu_list %}
 <table  border="2" > 
 
 <tr> 
@@ -501,6 +501,7 @@ DETAILS OF FINANCIAL NOMINATION</h6></center>
 </tr> 
  
   {{ edu_list.other_nominee }}
+
 {% for i in edu_list %} 
         <tr> 
         <td>{{forloop.counter}}</td>  
@@ -513,7 +514,7 @@ DETAILS OF FINANCIAL NOMINATION</h6></center>
         {% endif %}
        
         <td> {{ i.percentage }}</td> 
-        <td> {{ i.nom_dt }}</td>     
+        <td> {{ i.nom_dt  |date:"d-m-Y"}}</td>     
         <td><center><a href="/teachers/teacher_nomini_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></center></td>
 
 
@@ -523,7 +524,7 @@ DETAILS OF FINANCIAL NOMINATION</h6></center>
         
 </table> 
 </form>
-
+{% endif %}
 
   </div>
   </div>

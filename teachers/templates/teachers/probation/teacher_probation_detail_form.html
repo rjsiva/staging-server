@@ -362,7 +362,7 @@ DETAILS OF PROBATION </h6></b><br></center> <br>
 
         <td> {{ i.designation.designation|upper  }}</td>        
         <td> {{ i.order_no|upper }}</td>
-        <td> {{ i.order_date }}</td>
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td>
         <td> {{ i.date_of_clearance}} / {{i.doprob_session}}</td>
     
         <td><a href="/teachers/teacher_probation_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td>

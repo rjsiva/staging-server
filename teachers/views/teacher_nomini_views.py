@@ -21,52 +21,63 @@ class Teacher_nomini_create(View):
             else:
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-             
-            school_id =staff_id.school_id            
-                   
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name 
-            staff_uid=staff_id.count        
-            form=Teacher_nominiform()
-            fund=fund_category.objects.all()
-            family=Teacher_family_detail.objects.filter(teacherid_id=tid)
-            if family.count()==0:
-                messages.warning(request, 'First make entries in Family Details')
-                return redirect('teacher_personnel_entry_after',pk=tid)
-            edu_list = Teacher_nomini.objects.filter(teacherid_id=tid)       
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            cps=0
-            dcrg=0
-            fbf=0
-            gpf=0
-            pension=0
-            spf=0
-            spf2000=0
-            tpf=0
-            
-            for i in edu_list:
-                if str(i.fund_name) == "CPS" :
-                    cps=i.percentage + cps
-                elif str(i.fund_name) == "DCRG" :
-                    dcrg=i.percentage + dcrg
-                elif str(i.fund_name) == "FBF" :
-                    fbf=i.percentage + fbf
-                elif str(i.fund_name) == "GPF" :
-                    gpf=i.percentage + gpf
-                elif str(i.fund_name) == "PENSION" :
-                    pension=i.percentage + pension
-                elif str(i.fund_name) == "SPF" :
-                    spf=i.percentage + spf
-                elif str(i.fund_name) == "SPF2000" :
-                    spf2000=i.percentage + spf2000
-                elif str(i.fund_name) == "TPF" :
-                    tpf=i.percentage + tpf
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+       
+                   
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name 
+                staff_uid=staff_id.count        
+                form=Teacher_nominiform()
+                fund=fund_category.objects.all()
+                family=Teacher_family_detail.objects.filter(teacherid_id=tid)
+                if family.count()==0:
+                    messages.warning(request, 'First make entries in Family Details')
+                    return redirect('teacher_personnel_entry_after',pk=tid)
+                edu_list = Teacher_nomini.objects.filter(teacherid_id=tid)       
+
+                cps=0
+                dcrg=0
+                fbf=0
+                gpf=0
+                pension=0
+                spf=0
+                spf2000=0
+                tpf=0
                 
-            if edu_list.count()==0: 
-                messages.success(request, 'No Data') 
-            return render(request,'teachers/nomini/teacher_nomini_detail_form.html',locals())
+                for i in edu_list:
+                    if str(i.fund_name) == "CPS" :
+                        cps=i.percentage + cps
+                    elif str(i.fund_name) == "DCRG" :
+                        dcrg=i.percentage + dcrg
+                    elif str(i.fund_name) == "FBF" :
+                        fbf=i.percentage + fbf
+                    elif str(i.fund_name) == "GPF" :
+                        gpf=i.percentage + gpf
+                    elif str(i.fund_name) == "PENSION" :
+                        pension=i.percentage + pension
+                    elif str(i.fund_name) == "SPF" :
+                        spf=i.percentage + spf
+                    elif str(i.fund_name) == "SPF2000" :
+                        spf2000=i.percentage + spf2000
+                    elif str(i.fund_name) == "TPF" :
+                        tpf=i.percentage + tpf
+                    
+                if edu_list.count()==0: 
+                    messages.success(request, 'No Data') 
+                return render(request,'teachers/nomini/teacher_nomini_detail_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     
@@ -110,66 +121,85 @@ class teacher_nomini_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk') 
             pk1=self.kwargs.get('pk1') 
-            staff_id = Teacher_detail.objects.get(id = tid) 
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id            
-            dategovt=staff_id.dofsed  
-            staff_name=staff_id.name 
-            staff_uid=staff_id.count     
-            instance=Teacher_nomini.objects.get(id=pk1)       
-            fund=fund_category.objects.all()
-            family=Teacher_family_detail.objects.filter(teacherid_id=tid)
-            form = Teacher_nominiform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            fund_name = instance.fund_name
-            nominee_name=instance.nominee_name
-            other_nominee=instance.other_nominee       
-            percentage = instance.percentage   
-            nom_dt =instance.nom_dt    
-            edu_list = Teacher_nomini.objects.filter(teacherid_id=tid) 
-            cps=0
-            dcrg=0
-            fbf=0
-            gpf=0
-            pension=0
-            spf=0
-            spf2000=0
-            tpf=0
-            if str(other_nominee) != "None":
-                fla=1
-                
-            elif str(nominee_name) != "None":
-                fla=2
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            for i in edu_list:
-                per=i.percentage
-                
-                if fla==1:
-                    if str(i.other_nominee)==str(other_nominee) and str(i.fund_name)==str(fund_name):
-                        per = 0
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                school_id =staff_id.school_id            
+                dategovt=staff_id.dofsed  
+                staff_name=staff_id.name 
+                staff_uid=staff_id.count  
+                if (Teacher_nomini.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+
+                    instance=Teacher_nomini.objects.get(id=pk1,teacherid_id=tid)       
+                    fund=fund_category.objects.all()
+                    family=Teacher_family_detail.objects.filter(teacherid_id=tid)
+                    form = Teacher_nominiform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    fund_name = instance.fund_name
+                    nominee_name=instance.nominee_name
+                    other_nominee=instance.other_nominee       
+                    percentage = instance.percentage   
+                    nom_dt =instance.nom_dt    
+                    edu_list = Teacher_nomini.objects.filter(teacherid_id=tid) 
+                    cps=0
+                    dcrg=0
+                    fbf=0
+                    gpf=0
+                    pension=0
+                    spf=0
+                    spf2000=0
+                    tpf=0
+                    if str(other_nominee) != "None":
+                        fla=1
                         
-                elif str(i.nominee_name)==str(nominee_name) and str(i.fund_name)==str(fund_name):
-                        per = 0
+                    elif str(nominee_name) != "None":
+                        fla=2
+
+                    for i in edu_list:
+                        per=i.percentage
                         
-                       
-                if str(i.fund_name) == "CPS" :
-                    cps=per + cps
-                    
-                elif str(i.fund_name) == "DCRG" :
-                    dcrg=per + dcrg
-                elif str(i.fund_name) == "FBF" :
-                    fbf=per + fbf
-                elif str(i.fund_name) == "GPF" :
-                    gpf=per + gpf
-                elif str(i.fund_name) == "PENSION" :
-                    pension=per + pension
-                elif str(i.fund_name) == "SPF" :
-                    spf=per + spf
-                elif str(i.fund_name) == "SPF2000" :
-                    spf2000=per + spf2000
-                elif str(i.fund_name) == "TPF" :
-                    tpf=per + tpf 
-            return render(request,'teachers/nomini/teacher_nomini_detail_form.html',locals())
+                        if fla==1:
+                            if str(i.other_nominee)==str(other_nominee) and str(i.fund_name)==str(fund_name):
+                                per = 0
+                                
+                        elif str(i.nominee_name)==str(nominee_name) and str(i.fund_name)==str(fund_name):
+                                per = 0
+                                
+                               
+                        if str(i.fund_name) == "CPS" :
+                            cps=per + cps
+                            
+                        elif str(i.fund_name) == "DCRG" :
+                            dcrg=per + dcrg
+                        elif str(i.fund_name) == "FBF" :
+                            fbf=per + fbf
+                        elif str(i.fund_name) == "GPF" :
+                            gpf=per + gpf
+                        elif str(i.fund_name) == "PENSION" :
+                            pension=per + pension
+                        elif str(i.fund_name) == "SPF" :
+                            spf=per + spf
+                        elif str(i.fund_name) == "SPF2000" :
+                            spf2000=per + spf2000
+                        elif str(i.fund_name) == "TPF" :
+                            tpf=per + tpf 
+                        edu_list=None
+                    return render(request,'teachers/nomini/teacher_nomini_detail_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

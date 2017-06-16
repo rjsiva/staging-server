@@ -58,37 +58,52 @@ class Teacher_posting_create(View):
 
             school_id = request.user.account.associated_with
             tid=self.kwargs.get('pk')  
-              
-            staff_id = Teacher_detail.objects.get(id = tid)          
-            dategovt=staff_id.dofsed
-            if staff_id.stafs=='Teaching':
-                staffid_1=1
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
             else:
-                staffid_1=2
-            
-            staff_name=staff_id.name
-            staff_uid=staff_id.count     
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id
-            desig_sub= Desig_subjects.objects.all()
-            if basic_det.sch_cate_id:
-                chk_catid=School_category.objects.get(id=basic_det.sch_cate_id)
-                if ((chk_catid.category_code=='1')|(chk_catid=='11')):          
-                    posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='PS'))
-                elif ((chk_catid.category_code=='2')|(chk_catid.category_code=='4')|(chk_catid.category_code=='12')):
-                    posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='MS')|Q(user_level='HRHSMS'))
-                elif ((chk_catid.category_code=='6')|(chk_catid.category_code=='7')|(chk_catid.category_code=='8')) :
-                    posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS')|Q(user_level='HRHSMS'))
-                elif ((chk_catid.category_code=='3')|(chk_catid.category_code=='5')|(chk_catid.category_code=='9')|(chk_catid.category_code=='10')):
-                    posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS')|Q(user_level='HRHSMS'))
-            else:
-                posting_desg= User_desig.objects.all()
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            post=Posting_type.objects.all()
-            edu_list = Teacher_posting_entry.objects.filter(teacherid_id=tid)      
-            if edu_list.count()==0:
-                messages.success(request, 'No Data')
-            return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
+
+            
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                dategovt=staff_id.dofsed
+                if staff_id.stafs=='Teaching':
+                    staffid_1=1
+                else:
+                    staffid_1=2
+                
+                staff_name=staff_id.name
+                staff_uid=staff_id.count     
+                basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
+                sch_key = basic_det.id
+                desig_sub= Desig_subjects.objects.all()
+                if basic_det.sch_cate_id:
+                    chk_catid=School_category.objects.get(id=basic_det.sch_cate_id)
+                    if ((chk_catid.category_code=='1')|(chk_catid=='11')):          
+                        posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='PS'))
+                    elif ((chk_catid.category_code=='2')|(chk_catid.category_code=='4')|(chk_catid.category_code=='12')):
+                        posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='MS')|Q(user_level='HRHSMS'))
+                    elif ((chk_catid.category_code=='6')|(chk_catid.category_code=='7')|(chk_catid.category_code=='8')) :
+                        posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS')|Q(user_level='HRHSMS'))
+                    elif ((chk_catid.category_code=='3')|(chk_catid.category_code=='5')|(chk_catid.category_code=='9')|(chk_catid.category_code=='10')):
+                        posting_desg= User_desig.objects.filter(Q(user_cate='SCHOOL') & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS')|Q(user_level='HRHSMS'))
+                else:
+                    posting_desg= User_desig.objects.all()
+
+                post=Posting_type.objects.all()
+                edu_list = Teacher_posting_entry.objects.filter(teacherid_id=tid)      
+                if edu_list.count()==0:
+                    messages.success(request, 'No Data')
+                return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
+
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -96,42 +111,48 @@ class Teacher_posting_create(View):
     def post(self,request,**kwargs):
         if request.user.is_authenticated():
             form=Teacher_posting_entryform(request.POST,request.FILES) 
+
           
             tid=self.kwargs.get('pk')        
             staff_id = Teacher_detail.objects.get(id = tid)
             school_id =staff_id.school_id 
-            staff_name=staff_id.name
-            staff_uid=staff_id.count    
-            if form.is_valid():             
-                regular=Teacher_posting_entry(teacherid_id=tid,
-                            designation=form.cleaned_data['designation'],
-                            block=form.cleaned_data['block'],
-                            school_name1=form.cleaned_data['school_name1'],
-                            district=form.cleaned_data['district'],
-                            type_of_posting=form.cleaned_data['type_of_posting'],
-                            period_from=form.cleaned_data['period_from'],
-                            period_to=form.cleaned_data['period_to'],
-                            )
-                regular.save()      
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
 
-                b=completed_table.objects.get(school_id=school_id,teacherid_id=staff_id)
-                if b.Teacher_posting=='0':
-                    
-                    b.id=b.id
-                    b.teacherid_id=b.teacherid_id
-                    b.school_id=b.school_id
-                    b.Teacher_regularisation=b.Teacher_regularisation
-                    b.Teacher_posting=1         
-                    b.Teacher_edu=b.Teacher_edu
-                    b.save()
-                    
-                   
-                    msg = str(staff_name) + "(" + str(staff_uid)+") Posting details added successfully."
-                    messages.success(request, msg ) 
-                return redirect('teacher_posting_create',pk=tid)
-            else:
-                print form.errors  
-                return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
+            
+                staff_name=staff_id.name
+                staff_uid=staff_id.count    
+                if form.is_valid():             
+                    regular=Teacher_posting_entry(teacherid_id=tid,
+                                designation=form.cleaned_data['designation'],
+                                block=form.cleaned_data['block'],
+                                school_name1=form.cleaned_data['school_name1'],
+                                district=form.cleaned_data['district'],
+                                type_of_posting=form.cleaned_data['type_of_posting'],
+                                period_from=form.cleaned_data['period_from'],
+                                period_to=form.cleaned_data['period_to'],
+                                )
+                    regular.save()      
+
+                    b=completed_table.objects.get(school_id=school_id,teacherid_id=staff_id)
+                    if b.Teacher_posting=='0':
+                        
+                        b.id=b.id
+                        b.teacherid_id=b.teacherid_id
+                        b.school_id=b.school_id
+                        b.Teacher_regularisation=b.Teacher_regularisation
+                        b.Teacher_posting=1         
+                        b.Teacher_edu=b.Teacher_edu
+                        b.save()
+                        
+                       
+                        msg = str(staff_name) + "(" + str(staff_uid)+") Posting details added successfully."
+                        messages.success(request, msg ) 
+                    return redirect('teacher_posting_create',pk=tid)
+                else:
+                    print form.errors  
+                    return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
  
@@ -142,48 +163,70 @@ class teacher_posting_update(View):
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')  
-            staff_id = Teacher_detail.objects.get(id = tid)     
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id
-
-            desig_sub= Desig_subjects.objects.all()
-            if basic_det.sch_cate_id:
-                if ((basic_det.sch_cate_id==1)|(basic_det.sch_cate_id==11)):
-                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='PS'))
-                elif ((basic_det.sch_cate_id==2)|(basic_det.sch_cate_id==4)|(basic_det.sch_cate_id==12)):
-                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='MS'))
-                elif ((basic_det.sch_cate_id==6)|(basic_det.sch_cate_id==7)|(basic_det.sch_cate_id==8)) :
-                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS'))
-                elif ((basic_det.sch_cate_id==3)|(basic_det.sch_cate_id==5)|(basic_det.sch_cate_id==9)|(basic_det.sch_cate_id==10)):
-                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS'))
+            # school_id = request.user.account.associated_with
+            # tid=self.kwargs.get('pk')  
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
             else:
-                posting_desg= User_desig.objects.all()
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            school_id = staff_id.school_id
-            tid=self.kwargs.get('pk')
-            pk1=self.kwargs.get('pk1')
-            dategovt=staff_id.dofsed
-            staffid_1=staff_id.stafs
-            staff_name=staff_id.name
-            staff_uid=staff_id.count
-            posting_desg=User_desig.objects.all()
-            dist=District.objects.all()
-            block=Block.objects.all()
-            post=Posting_type.objects.all()                 
-            instance=Teacher_posting_entry.objects.get(id=pk1)
-            form = Teacher_posting_entryform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            designation = instance.designation
-            school_name1=instance.school_name1
-            district = instance.district  
-            type_of_posting =instance.type_of_posting   
-            period_from=instance.period_from
-            period_to = instance.period_to 
-            if (period_to):
-                return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
+
+            
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                sch_key = basic_det.id
+
+                desig_sub= Desig_subjects.objects.all()
+                if basic_det.sch_cate_id:
+                    if ((basic_det.sch_cate_id==1)|(basic_det.sch_cate_id==11)):
+                        posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='PS'))
+                    elif ((basic_det.sch_cate_id==2)|(basic_det.sch_cate_id==4)|(basic_det.sch_cate_id==12)):
+                        posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='MS'))
+                    elif ((basic_det.sch_cate_id==6)|(basic_det.sch_cate_id==7)|(basic_det.sch_cate_id==8)) :
+                        posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS'))
+                    elif ((basic_det.sch_cate_id==3)|(basic_det.sch_cate_id==5)|(basic_det.sch_cate_id==9)|(basic_det.sch_cate_id==10)):
+                        posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS'))
+                else:
+                    posting_desg= User_desig.objects.all()
+
+                school_id = staff_id.school_id
+                tid=self.kwargs.get('pk')
+                pk1=self.kwargs.get('pk1')
+                dategovt=staff_id.dofsed
+                staffid_1=staff_id.stafs
+                staff_name=staff_id.name
+                staff_uid=staff_id.count
+                posting_desg=User_desig.objects.all()
+                dist=District.objects.all()
+                block=Block.objects.all()
+                post=Posting_type.objects.all()                 
+                if(Teacher_posting_entry.objects.filter(id=pk1,teacherid_id=tid).count())>0:
+                    instance=Teacher_posting_entry.objects.get(id=pk1,teacherid_id=tid)
+                    form = Teacher_posting_entryform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    designation = instance.designation
+                    school_name1=instance.school_name1
+                    district = instance.district  
+                    type_of_posting =instance.type_of_posting   
+                    period_from=instance.period_from
+                    period_to = instance.period_to 
+                    if (period_to):
+                        return render(request,'teachers/posting/teacher_posting_detail_form.html',locals())
+                    else:
+                        messages.success(request,'You can not update this details.')
+                        return redirect('teacher_posting_create',pk=tid)
+                else:
+                    messages.info(request, 'Record Does Not Exist')    
+                    return HttpResponseRedirect('/')
+                
             else:
-                messages.success(request,'You can not update this details.')
-                return redirect('teacher_posting_create',pk=tid)
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
+    
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     

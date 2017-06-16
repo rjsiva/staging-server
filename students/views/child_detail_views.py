@@ -7,10 +7,10 @@ from django.views.generic import View,ListView, DetailView, CreateView, \
 from django.contrib import messages
 from forms import Child_detailform
 from baseapp.forms import Pool_databaseform
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from students.models import Child_detail, Child_family_detail, School_child_count, Parent_annual_income
 from django.db.models import Q
-from baseapp.models import State, District, School, Habitation, Zone, Schemes, Class_Studying, Differently_abled, Disadvantaged_group, Child_detail_pool_database, Language, Group_code, Bank, Education_medium, Nationality, Religion, Community
+from baseapp.models import *
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, PageNotAnInteger
@@ -18,9 +18,20 @@ from datetime import *
 from django import template
 from django.contrib import messages
 from excel_response import ExcelResponse
+from django.http import HttpResponse
+from django.conf import settings
+import cStringIO as StringIO
+from django.template.loader import get_template
+from django.template import Context
+from django.utils import simplejson
+from xhtml2pdf import pisa
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.db.models import Count, Sum
 from django.utils import simplejson
 import os
 from django.conf import settings
+import sys
 
 class Child_detailView(object):
     model = Child_detail
@@ -62,16 +73,20 @@ class Child_detailCreateView(View):
         religion_list = Religion.objects.all().exclude(religion_name='Undefined').order_by('id')
         community_list = Community.objects.all().exclude(community_name='undefined').order_by('id')
         schemes = Schemes.objects.all().order_by('scheme_name')
-        class_studying_list = Class_Studying.objects.all()[9:12]
+
+        class_studying_list = Class_Studying.objects.all()[0:12]
+
         nationality_list = Nationality.objects.all().exclude(nationality='Undefined').order_by('id')
         group_code_list = Group_code.objects.all()
+        group_code_cbse=Group_code_cbse.objects.all()
         bank_list = Bank.objects.all()
         state_list = State.objects.all().order_by('state_name')
         parent_income_list = Parent_annual_income.objects.all().order_by('id')
+        
         govt_aid_school_management_list = [1,2,3,4,5,6,7]
         aid_school_management_list = [6,7]
         private_school_management_list = [8,9,10,11,12,13,14,15,16,17,18]
-        return render (request,'students/child_detail/child_detail_form.html',{'form':form,'district_list':district_list,'schemes':schemes,'differently_abled_list':differently_abled_list,'dis_advantaged_list':dis_advantaged_list,'language_list':language_list,'class_studying_list':class_studying_list,'group_code_list':group_code_list,'bank_list':bank_list,'state_list':state_list,'parent_income_list':parent_income_list,'govt_aid_school_management_list':govt_aid_school_management_list,'aid_school_management_list':aid_school_management_list,'education_medium_list':education_medium_list,'nationality_list':nationality_list,'religion_list':religion_list,'community_list':community_list,'private_school_management_list':private_school_management_list})
+        return render (request,'students/child_detail/child_detail_form.html',{'form':form,'district_list':district_list,'schemes':schemes,'differently_abled_list':differently_abled_list,'dis_advantaged_list':dis_advantaged_list,'language_list':language_list,'class_studying_list':class_studying_list,'group_code_list':group_code_list,'bank_list':bank_list,'state_list':state_list,'parent_income_list':parent_income_list,'govt_aid_school_management_list':govt_aid_school_management_list,'aid_school_management_list':aid_school_management_list,'education_medium_list':education_medium_list,'nationality_list':nationality_list,'religion_list':religion_list,'community_list':community_list,'private_school_management_list':private_school_management_list,'group_code_cbse':group_code_cbse})
 
     def post(self,request,**kwargs):
         # import ipdb
@@ -113,6 +128,12 @@ class Child_detailCreateView(View):
             else:
                 comm_certificate_no = ''
                 comm_certificate_date = '1111-11-11'
+                
+            if form.cleaned_data['branchnew']:
+                ifsc_code=form.cleaned_data['branchnew'].ifsc_code
+            else:
+                ifsc_code=''
+
 
 
             child = Child_detail(
@@ -166,6 +187,12 @@ class Child_detailCreateView(View):
                 grpcode_language2 = form.cleaned_data['grpcode_language2'],
                 grpcode_language3 = form.cleaned_data['grpcode_language3'],
                 grpcode_language4 = form.cleaned_data['grpcode_language4'],
+
+                cbse_subject1 = form.cleaned_data['cbse_subject1'],
+                cbse_subject2= form.cleaned_data['cbse_subject2'],
+                cbse_subject3 = form.cleaned_data['cbse_subject3'],
+                cbse_subject4 = form.cleaned_data['cbse_subject4'],
+                cbse_opt_subject=form.cleaned_data['cbse_opt_subject'],
                 first_language = form.cleaned_data['first_language'],
                 optional_language = form.cleaned_data['optional_language'],
                 sport_participation = form.cleaned_data['sport_participation'],
@@ -178,10 +205,17 @@ class Child_detailCreateView(View):
                 staff_id = form.cleaned_data['staff_id'],
                 student_admitted_section = form.cleaned_data['student_admitted_section'],
                 school_admission_no = form.cleaned_data['school_admission_no'],
-                bank = form.cleaned_data['bank'],
-                bank_branch = form.cleaned_data['bank_branch'],
+                #bank chaining
+                bank_dist = form.cleaned_data['bank_dist'],
+                banknew = form.cleaned_data['banknew'],
+                branchnew = form.cleaned_data['branchnew'],
+                bank_ifsc_codenew = ifsc_code,
+                
+                
+                #bank = form.cleaned_data['bank'],
+                #bank_branch = form.cleaned_data['bank_branch'],
                 bank_account_no = form.cleaned_data['bank_account_no'],
-                bank_ifsc_code = form.cleaned_data['bank_ifsc_code'],
+                #bank_ifsc_code = form.cleaned_data['bank_ifsc_code'],
                 sports_player = form.cleaned_data['sports_player'],
                 sports_name = form.cleaned_data['sports_name'],
                 # govt_schemes_status = form.cleaned_data['govt_schemes_status'],
@@ -236,10 +270,12 @@ class Child_detailCreateView(View):
                     newchild_fmdetail.save()
             except Exception:
                 pass
-            msg = "Child    " + form.cleaned_data['name'] + "  added successfully"
+            
+            msg = "Child    " + str(child.unique_id_no) +"    "+form.cleaned_data['name'] +"   "+form.cleaned_data['gender']+"   "+"Date of Birth -"+str(child.dob) +"   "  + "  added successfully"
             messages.success(request, msg )
             return HttpResponseRedirect(reverse('students_child_detail_list'))
         else:
+            print form.errors
             district_list = District.objects.all().exclude(district_name='None').order_by('district_name')
             differently_abled_list = Differently_abled.objects.all().order_by('da_name')
             dis_advantaged_list = Disadvantaged_group.objects.all().order_by('dis_group_name')
@@ -265,14 +301,14 @@ class Child_detailDayArchiveView(
 
 class Child_detailDeleteView(Child_detailView, DeleteView):
 
-   def get_success_url(self):
+    def get_success_url(self):
         from django.core.urlresolvers import reverse
         return reverse('students_child_detail_list')
 
 
 class Child_detailDetailView(View):
     def get (self,request,**kwargs):
-        transfer_enable_classes=[2,3,4,5,6,7,8,9,10,11,12]
+        transfer_enable_classes=[1,2,3,4,5,6,7,8,9,10,11,12]
         pk=self.kwargs.get('pk')
         childdetail = Child_detail.objects.get(id=pk)
         differently_abled_list1=childdetail.differently_abled
@@ -283,7 +319,15 @@ class Child_detailDetailView(View):
             nutritious_meal_programme = "Yes"
         else:
             nutritious_meal_programme = "No"
-        return render(request,'students/child_detail/object_table_detail.html',{'transfer_enable_classes':transfer_enable_classes,'fmdetail':fmdetail,'object':childdetail,'schemes':scheme_lst1,'differently_abled_list':differently_abled_list1,'disadvantaged_group_list':disadvantaged_group_list1,'nutritious_meal_programme':nutritious_meal_programme})
+        usr = str(request.user.account.user)
+        ch = str(childdetail.school.school_code)
+        if usr == ch :
+            print 'equal'
+            return render(request,'students/child_detail/object_table_detail.html',{'transfer_enable_classes':transfer_enable_classes,'fmdetail':fmdetail,'object':childdetail,'schemes':scheme_lst1,'differently_abled_list':differently_abled_list1,'disadvantaged_group_list':disadvantaged_group_list1,'nutritious_meal_programme':nutritious_meal_programme})
+        else:
+            msg = "The requested Student does not belong to this school"
+            return render(request,'students/child_detail/object_table_detail.html',locals())
+
    # def get (self,request,**kwargs):
    #     pk=self.kwargs.get('pk')
    #     childdetail = Child_detail.objects.get(id=pk)
@@ -300,10 +344,16 @@ class Child_detailDetailView(View):
 class Child_detailClasswiseView(View):
     
     def get(self,request,**kwargs):
+        
         class_id = self.kwargs.get('cl_id')
-        school_code = self.kwargs.get('school_code')
-        school_id = request.user.account.associated_with
-        schl_id = School.objects.get(id=school_id)
+        school_code = self.request.GET.get('school_code')
+        if request.user.account.user_category_id == 1:
+            school_id = request.user.account.associated_with
+            schl_id = School.objects.get(id=school_id)
+        else :
+            schl_id = School.objects.get(school_code=school_code)
+        
+        
         child_detail_main_list = Child_detail.objects.filter(district_id = schl_id.district_id , block_id = schl_id.block_id)
         # if request.user.account.user_category_id == 2:
         #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
@@ -316,16 +366,16 @@ class Child_detailClasswiseView(View):
         # else:
         #     child_detail_list = child_detail_main_list.filter(staff_id=schl_id.school_code).exclude(transfer_flag = 1)
         if request.user.account.user_category_id == 2:
-            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+            child_detail_list = child_detail_main_list.objects.filter(school_id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
         elif request.user.account.user_category_id == 5:
-            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+            child_detail_list = child_detail_main_list.objects.filter(school_id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
         elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
-            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
+            child_detail_list = child_detail_main_list.objects.filter(school_id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
         elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
             child_detail_list = child_detail_main_list.filter(school_id=schl_id.id).exclude(transfer_flag = 1)    
         else:
             child_detail_list = child_detail_main_list.filter(school_id=schl_id.id).exclude(transfer_flag = 1)
-        classwise_detail = child_detail_list.filter(class_studying_id=class_id).order_by('name')
+        classwise_detail = child_detail_list.filter(class_studying_id=class_id).order_by('name','gender')
         classwise_detail_count = classwise_detail.count()
         paginator = Paginator(classwise_detail, 50)
         page = request.GET.get('page')
@@ -339,47 +389,50 @@ class Child_detailClasswiseView(View):
             page_obj = paginator.page(paginator.num_pages)
         return render(request,'students/child_detail/child_detail_classwise_list.html',{'page_objs':page_obj,'classwise_detail':classwise_detail,'school_code':school_code,'class_id':class_id,'classwise_detail_count':classwise_detail_count})
 
-class Child_detailClasswiseListView(View):
+# class Child_detailClasswiseListView(View):
     
-    def get(self,request,**kwargs):
-        class_id = self.kwargs.get('cl_id')
-        school_code = self.kwargs.get('school_code')
-        schl_id = School.objects.get(school_code=school_code)
+#     def get(self,request,**kwargs):
+#         print "klfhfklsd"
 
-        # if request.user.account.user_category_id == 2:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 5:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code).exclude(transfer_flag = 1)    
-        # else:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=schl_id.school_code).exclude(transfer_flag = 1)
-        if request.user.account.user_category_id == 2:
-            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        elif request.user.account.user_category_id == 5:
-            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
-            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
-        elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
-            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id).exclude(transfer_flag = 1)    
-        else:
-            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id).exclude(transfer_flag = 1)
-        classwise_detail = child_detail_list.filter(class_studying_id=class_id).order_by('name')
-        classwise_detail_count = classwise_detail.count()
-        paginator = Paginator(classwise_detail, 50)
-        page = request.GET.get('page')
-        try:
-            page_obj = paginator.page(page)
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            page_obj = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            page_obj = paginator.page(paginator.num_pages)
-        return render(request,'students/child_detail/child_detail_classwise_list.html',{'page_objs':page_obj,'classwise_detail':classwise_detail,'school_code':school_code,'class_id':class_id,'classwise_detail_count':classwise_detail_count})
+#         class_id = self.kwargs.get('cl_id')
+#         school_code = self.kwargs.get('school_code')
+#         schl_id = School.objects.get(school_code=school_code)
 
+#         # if request.user.account.user_category_id == 2:
+#         #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+#         # elif request.user.account.user_category_id == 5:
+#         #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+#         # elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+#         #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
+#         # elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+#         #     child_detail_list = Child_detail.objects.filter(staff_id=school_code).exclude(transfer_flag = 1)    
+#         # else:
+#         #     child_detail_list = Child_detail.objects.filter(staff_id=schl_id.school_code).exclude(transfer_flag = 1)
+#         if request.user.account.user_category_id == 2:
+#             child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+#         elif request.user.account.user_category_id == 5:
+#             child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+#         elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+#             child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
+#         elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+#             child_detail_list = Child_detail.objects.filter(school__id=schl_id.id).exclude(transfer_flag = 1)    
+#         else:
+#             child_detail_list = Child_detail.objects.filter(school_id=schl_id.id).exclude(transfer_flag = 1)
+        
+#         classwise_detail = child_detail_list.filter(class_studying_id=class_id).order_by('name','gender')
+
+#         classwise_detail_count = classwise_detail.count()
+#         paginator = Paginator(classwise_detail, 50)
+#         page = request.GET.get('page')
+#         try:
+#             page_obj = paginator.page(page)
+#         except PageNotAnInteger:
+#             # If page is not an integer, deliver first page.
+#             page_obj = paginator.page(1)
+#         except EmptyPage:
+#             # If page is out of range (e.g. 9999), deliver last page of results.
+#             page_obj = paginator.page(paginator.num_pages)
+#         return render(request,'students/child_detail/child_detail_classwise_list.html',{'page_objs':page_obj,'classwise_detail':classwise_detail,'school_code':school_code,'class_id':class_id,'classwise_detail_count':classwise_detail_count})
 
 
 class Child_detailListView(View):
@@ -388,10 +441,13 @@ class Child_detailListView(View):
         try:
             school_code = self.request.GET.get('school_code')
             if request.user.account.user_category_id == 1:
-                pass
+                school_details = School.objects.get(id=request.user.account.associated_with)
             else:
                 school_details = School.objects.get(school_code=school_code)
-                schl_id = school_details.id
+            
+            schl_id = school_details.id
+            schl_cat=school_details.category_id
+    
             if request.user.account.user_category_id == 2:
                 child_detail_list = School_child_count.objects.get(school_id=schl_id, school__block_id= request.user.account.associated_with)
             elif request.user.account.user_category_id == 3:
@@ -418,7 +474,9 @@ class Child_detailListView(View):
             X = child_detail_list.ten
             XI = child_detail_list.eleven
             XII = child_detail_list.twelve
-            return render(request,'students/child_detail/object_table_list.html',{'child_detail_list':child_detail_list,'totalcount':totalcount,'I':I,'II':II,'III':III,'IV':IV,'V':V,'VI':VI,'VII':VII,'VIII':VIII,'IX':IX,'X':X,'XI':XI,'XII':XII,'school_code':school_code})
+            return render(request,'students/child_detail/object_table_list.html',{'child_detail_list':child_detail_list,'totalcount':totalcount,'I':I,'II':II,'III':III,'IV':IV,'V':V,'VI':VI,'VII':VII,'VIII':VIII,'IX':IX,'X':X,'XI':XI,'XII':XII,'school_code':school_code,'schl_cat':schl_cat})
+
+
         except School_child_count.DoesNotExist:
             messages.add_message(
                 self.request,
@@ -455,11 +513,14 @@ class Child_detailTodayArchiveView(
         return reverse('students_child_detail_list')
 
 
+
 class Child_detailUpdateView(View):
 
     def get(self, request,**kwargs): 
         pk=self.kwargs.get('pk')
         instance = Child_detail.objects.get(id=pk)
+        schl_id = School.objects.get(id=request.user.account.associated_with)
+        stud_uid=instance.unique_id_no
         differently_abled_list1 = instance.differently_abled
         disadvantaged_group1 = instance.disadvantaged_group
         schemes1 =instance.schemes
@@ -491,7 +552,6 @@ class Child_detailUpdateView(View):
         religion_value = instance.religion
         stud_admitted_section = instance.student_admitted_section
         address = instance.house_address
-        bank_name = instance.bank
         attndce_status = instance.attendance_status
         scholarship_dtls = instance.scholarship_details
         diffntly_abled = instance.differently_abled
@@ -508,14 +568,28 @@ class Child_detailUpdateView(View):
         nationality_list = Nationality.objects.all().exclude(nationality='Undefined').order_by('id')
         schemes = Schemes.objects.all()
         mthr_name = instance.mother_name
-        class_studying_list = Class_Studying.objects.all()[9:12]
+
+        class_studying_list = Class_Studying.objects.all()[0:12]
+
         first_language_value = instance.first_language
         optional_language_value = instance.optional_language
+
         group_code_list = Group_code.objects.all()
+        group_code_cbse=Group_code_cbse.objects.all()
+
         grpcode_language1 = instance.grpcode_language1
         grpcode_language2 = instance.grpcode_language2
         grpcode_language3 = instance.grpcode_language3
         grpcode_language4 = instance.grpcode_language4
+
+        cbse_subject1 = instance.cbse_subject1
+        cbse_subject2 = instance.cbse_subject2
+        cbse_subject3 = instance.cbse_subject3
+        cbse_subject4 = instance.cbse_subject4
+        cbse_opt_subject=instance.cbse_opt_subject
+            
+
+
         bank_list = Bank.objects.all()
         state_list = State.objects.all().order_by('state_name')
         photo = instance.photograph
@@ -534,7 +608,7 @@ class Child_detailUpdateView(View):
         onetoten = [1,2,3,4,5,6,7,8,9,10]
         onetotwelve = [1,2,3,4,5,6,7,8,9,10,11,12]
         onetoeight = [1,2,3,4,5,6,7,8]
-        return render(request, 'students/child_detail/child_detail_form.html', {'schl_cat_10': schl_cat_10,'schl_cat_12': schl_cat_12,'grp':grp,'form': form,'fmdetail':fmdetail,'district_list':district_list,'pk1':pk,'schemes':schemes,'differently_abled_list':differently_abled_list,'dis_advantaged_list':dis_advantaged_list,'ge':ge,'cls_section':cls_section,'cls_studying':cls_studying,'academic_yr':academic_yr,'mother_ocu':mother_ocu,'father_ocu':father_ocu,'bg':bg,'st_status':st_status,'differently_abled_list1':differently_abled_list1,'disadvantaged_group1':disadvantaged_group1,'schemes1':schemes1,'sport_participation':sport_participation,'sports_name':sports_name,'mthr_name':mthr_name,'nutritious_meal_programme':nutritious_meal_programme,'state_list':state_list,'parent_income_list':parent_income_list,'parent_income':parent_income,'class_studying_list':class_studying_list,'group_code_list':group_code_list,'bank_list':bank_list,'education_medium_list':education_medium_list,'nationality_list':nationality_list,'religion_list':religion_list,'community_list':community_list,'language_list':language_list,'mothrtongue':mothrtongue,'edu_medium':edu_medium,'nationality_value':nationality_value,'religion_value':religion_value,'parent_income':parent_income,'govt_aid_school_management_list':govt_aid_school_management_list,'aid_school_management_list':aid_school_management_list,'private_school_management_list':private_school_management_list,'onetoten':onetoten,'stud_admitted_section':stud_admitted_section,'address':address,'onetotwelve':onetotwelve,'onetoeight':onetoeight,'bank_name':bank_name,'scholarship_dtls':scholarship_dtls,'attndce_status':attndce_status,'diffntly_abled':diffntly_abled,'photo':photo,'dis_advntgd_grp':dis_advntgd_grp})
+        return render(request, 'students/child_detail/child_detail_form.html', {'schl_cat_10': schl_cat_10,'schl_cat_12': schl_cat_12,'grp':grp,'form': form,'fmdetail':fmdetail,'district_list':district_list,'pk1':pk,'schemes':schemes,'differently_abled_list':differently_abled_list,'dis_advantaged_list':dis_advantaged_list,'ge':ge,'cls_section':cls_section,'cls_studying':cls_studying,'academic_yr':academic_yr,'mother_ocu':mother_ocu,'father_ocu':father_ocu,'bg':bg,'st_status':st_status,'differently_abled_list1':differently_abled_list1,'disadvantaged_group1':disadvantaged_group1,'schemes1':schemes1,'sport_participation':sport_participation,'sports_name':sports_name,'mthr_name':mthr_name,'nutritious_meal_programme':nutritious_meal_programme,'state_list':state_list,'parent_income_list':parent_income_list,'parent_income':parent_income,'class_studying_list':class_studying_list,'group_code_list':group_code_list,'bank_list':bank_list,'education_medium_list':education_medium_list,'nationality_list':nationality_list,'religion_list':religion_list,'community_list':community_list,'language_list':language_list,'mothrtongue':mothrtongue,'edu_medium':edu_medium,'nationality_value':nationality_value,'religion_value':religion_value,'parent_income':parent_income,'govt_aid_school_management_list':govt_aid_school_management_list,'aid_school_management_list':aid_school_management_list,'private_school_management_list':private_school_management_list,'onetoten':onetoten,'stud_admitted_section':stud_admitted_section,'address':address,'onetotwelve':onetotwelve,'onetoeight':onetoeight,'scholarship_dtls':scholarship_dtls,'attndce_status':attndce_status,'diffntly_abled':diffntly_abled,'photo':photo,'dis_advntgd_grp':dis_advntgd_grp,'group_code_cbse':group_code_cbse,'cbse_subject1':cbse_subject1,'cbse_subject2':cbse_subject2,'cbse_subject3':cbse_subject3,'cbse_subject4':cbse_subject4,'cbse_opt_subject':cbse_opt_subject})
 
     def post(self,request,**kwargs):
         pk=self.kwargs.get('pk')
@@ -543,13 +617,13 @@ class Child_detailUpdateView(View):
         cls_section = instance.class_section
         academic_yr = instance.academic_year
         stud_photo = instance.photograph
-        # photo1=instance.photo
-        bank_name = instance.bank
+        photo1=instance.photo
         differently_abled_list1 = instance.differently_abled
         student_count = School_child_count.objects.get(school_id = instance.school_id)
         form = Child_detailform(request.POST,request.FILES)
         if form.is_valid():
             child_edit = Child_detail.objects.get(id=pk)
+            fmdetail = Child_family_detail.objects.filter(child_key=pk).order_by('id')
             class_studying_detail = child_edit.class_studying
 
             # if form.cleaned_data["child_differently_abled"]  == "Yes":
@@ -618,12 +692,18 @@ class Child_detailUpdateView(View):
 
             
             check = request.POST.get('clear_photo')
+
             
             if check == "True":
-                # photo_file=settings.MEDIA_ROOT+'/'+ str(stud_photo)
-                # photo_file1=settings.MEDIA_ROOT+'/'+ str(photo1)
-                # os.remove(photo_file)
-                # os.remove(photo_file1)
+                try:
+                    photo_file=settings.MEDIA_ROOT+'/'+ str(stud_photo)
+                    photo_file1=settings.MEDIA_ROOT+'/'+ str(photo1)
+                    os.remove(photo_file)
+                    os.remove(photo_file1)
+                    
+                except:
+                    pass
+                    
                 student_photo=''
                 student_photo = form.cleaned_data['photograph']
             else:
@@ -688,7 +768,12 @@ class Child_detailUpdateView(View):
             else:
                 sprt_participation = ''
                 sprts_name = ''
+                
+            if form.cleaned_data['branchnew']:
 
+                ifsc_code=form.cleaned_data['branchnew'].ifsc_code
+            else:
+                ifsc_code=''
             child_edit.name = form.cleaned_data['name']
             child_edit.name_tamil = form.cleaned_data['name_tamil']
             child_edit.aadhaar_id = form.cleaned_data['aadhaar_id']
@@ -739,6 +824,14 @@ class Child_detailUpdateView(View):
             child_edit.grpcode_language2 = form.cleaned_data['grpcode_language2']
             child_edit.grpcode_language3 = form.cleaned_data['grpcode_language3']
             child_edit.grpcode_language4 = form.cleaned_data['grpcode_language4']
+
+
+            child_edit.cbse_subject1 = form.cleaned_data['cbse_subject1']
+            child_edit.cbse_subject2= form.cleaned_data['cbse_subject2']
+            child_edit.cbse_subject3 = form.cleaned_data['cbse_subject3']
+            child_edit.cbse_subject4 = form.cleaned_data['cbse_subject4']
+            child_edit.cbse_opt_subject=form.cleaned_data['cbse_opt_subject']
+            
             child_edit.first_language = form.cleaned_data['first_language']
             child_edit.optional_language = form.cleaned_data['optional_language']
             child_edit.group_code = form.cleaned_data['group_code']
@@ -756,14 +849,21 @@ class Child_detailUpdateView(View):
             child_edit.staff_id = form.cleaned_data['staff_id']
             child_edit.schl_cat_10 = form.cleaned_data['schl_cat_10']
             child_edit.schl_cat_12 = form.cleaned_data['schl_cat_12']
-            if form.cleaned_data['bank']:
-                child_edit.bank = form.cleaned_data['bank']
-            if form.cleaned_data['bank_branch']:
-                child_edit.bank_branch = form.cleaned_data['bank_branch']
+            #bank chaining
+            if form.cleaned_data['bank_dist']:
+                child_edit.bank_dist = form.cleaned_data['bank_dist']
+            if form.cleaned_data['banknew']:
+                child_edit.banknew = form.cleaned_data['banknew']
+            if form.cleaned_data['branchnew']:
+                child_edit.branchnew = form.cleaned_data['branchnew']
             if form.cleaned_data['bank_account_no']:
                 child_edit.bank_account_no = form.cleaned_data['bank_account_no']
-            if form.cleaned_data['bank_ifsc_code']:
-                child_edit.bank_ifsc_code = form.cleaned_data['bank_ifsc_code']
+            child_edit.bank_ifsc_codenew = ifsc_code
+            
+#             child_edit.bank = form.cleaned_data['bank']
+#             child_edit.bank_branch = form.cleaned_data['bank_branch']
+#             child_edit.bank_account_no = form.cleaned_data['bank_account_no']
+#             child_edit.bank_ifsc_code = form.cleaned_data['bank_ifsc_code']
             # child_edit.govt_schemes_status = form.cleaned_data['govt_schemes_status']
             child_edit.schemes = scheme_lst
             child_edit.academic_year = form.cleaned_data['academic_year']
@@ -848,7 +948,7 @@ class Child_detailUpdateView(View):
 
 
             try:
-   
+    
                 fmdetail_no = request.POST.getlist('fmdetail_no')
                 fmdetail_name = request.POST.getlist('sibling_name')
                 fmdetail_rel = request.POST.getlist('sibling_relationship')
@@ -856,20 +956,12 @@ class Child_detailUpdateView(View):
                 fmdetail_studying = request.POST.getlist('sibling_studying')
                 fmdetail_status = request.POST.getlist('sibling_status')
                 fmdetail_school = request.POST.getlist('sibling_studying_same_school')
-                fmdetail_count = Child_family_detail.objects.filter(child_key=pk).count()
-                fmdetail_existing = Child_family_detail.objects.filter(child_key=pk)
-                si_no_in_db = list()
-                
-                if (len(fmdetail_no)) > fmdetail_count:
-                    for p in fmdetail_existing:
-                        si_no_in_db.append(p.si_no)
-                    final_si_no1 = list(set(fmdetail_no)-set(si_no_in_db))
-                    final_si_no =  final_si_no1[-1]
-                    # final_si_no = list(set(fmdetail_no)-set(si_no_in_db))
-                    # if len(final_si_no1) > 1:
+                # fmdetail_count = Child_family_detail.objects.filter(child_key=pk).count()
+                # fmdetail_existing = Child_family_detail.objects.filter(child_key=pk)
+                # si_no_in_db = list()
 
-                    # else:
-                    for entry in range(len(final_si_no)):
+                if not fmdetail:
+                    for entry in range(len(fmdetail_no)):
                         newchild_fmdetail = Child_family_detail(
                             child_key = child_edit,
                             si_no  = fmdetail_no[entry],
@@ -883,32 +975,76 @@ class Child_detailUpdateView(View):
                             staff_id = child_edit.staff_id,
                         )
                         newchild_fmdetail.save()
+                else:
+                    for i in fmdetail:
+                        i.delete()
+
+                    for entry in range(len(fmdetail_no)):
+                        newchild_fmdetail = Child_family_detail(
+                            child_key = child_edit,
+                            si_no  = fmdetail_no[entry],
+                            block = child_edit.block,
+                            sibling_name = fmdetail_name[entry],
+                            sibling_relationship = fmdetail_rel[entry],
+                            sibling_age = fmdetail_age[entry],
+                            sibling_studying = fmdetail_studying[entry],
+                            sibling_status = fmdetail_status[entry],
+                            sibling_studying_same_school = fmdetail_school[entry],
+                            staff_id = child_edit.staff_id,
+                        )
+                        newchild_fmdetail.save()
+                
+                # if (len(fmdetail_no)) > fmdetail_count:
+                #     for p in fmdetail_existing:
+                #         si_no_in_db.append(p.si_no)
+                #     final_si_no1 = list(set(fmdetail_no)-set(si_no_in_db))
+                #     final_si_no =  final_si_no1[-1]
+                #     # final_si_no = list(set(fmdetail_no)-set(si_no_in_db))
+                #     # if len(final_si_no1) > 1:
+
+                #     # else:
+                #     for entry in range(len(final_si_no)):
+                #         newchild_fmdetail = Child_family_detail(
+                #             child_key = child_edit,
+                #             si_no  = fmdetail_no[entry],
+                #             block = child_edit.block,
+                #             sibling_name = fmdetail_name[entry],
+                #             sibling_relationship = fmdetail_rel[entry],
+                #             sibling_age = fmdetail_age[entry],
+                #             sibling_studying = fmdetail_studying[entry],
+                #             sibling_status = fmdetail_status[entry],
+                #             sibling_studying_same_school = fmdetail_school[entry],
+                #             staff_id = child_edit.staff_id,
+                #         )
+                #         newchild_fmdetail.save()
 
 
-                for entry in range(len(fmdetail_no)): 
-                    newchild_fmdetail_edit = Child_family_detail.objects.get(child_key=pk,si_no=fmdetail_no[entry])
-                    newchild_fmdetail_edit.child_key = child_edit
-                    newchild_fmdetail_edit.si_no  = fmdetail_no[entry]
-                    newchild_fmdetail_edit.block = child_edit.block
-                    newchild_fmdetail_edit.sibling_name = fmdetail_name[entry]
-                    newchild_fmdetail_edit.sibling_relationship = fmdetail_rel[entry]
-                    newchild_fmdetail_edit.sibling_age = fmdetail_age[entry]
-                    newchild_fmdetail_edit.sibling_studying = fmdetail_studying[entry]
-                    newchild_fmdetail_edit.sibling_status = fmdetail_status[entry]
-                    newchild_fmdetail_edit.sibling_studying_same_school = fmdetail_school[entry]
-                    newchild_fmdetail_edit.staff_id = child_edit.staff_id
-                    newchild_fmdetail_edit.save()
+                # for entry in range(len(fmdetail_no)): 
+                #     newchild_fmdetail_edit = Child_family_detail.objects.get(child_key=pk,si_no=fmdetail_no[entry])
+                #     newchild_fmdetail_edit.child_key = child_edit
+                #     newchild_fmdetail_edit.si_no  = fmdetail_no[entry]
+                #     newchild_fmdetail_edit.block = child_edit.block
+                #     newchild_fmdetail_edit.sibling_name = fmdetail_name[entry]
+                #     newchild_fmdetail_edit.sibling_relationship = fmdetail_rel[entry]
+                #     newchild_fmdetail_edit.sibling_age = fmdetail_age[entry]
+                #     newchild_fmdetail_edit.sibling_studying = fmdetail_studying[entry]
+                #     newchild_fmdetail_edit.sibling_status = fmdetail_status[entry]
+                #     newchild_fmdetail_edit.sibling_studying_same_school = fmdetail_school[entry]
+                #     newchild_fmdetail_edit.staff_id = child_edit.staff_id
+                #     newchild_fmdetail_edit.save()
             except Child_family_detail.DoesNotExist:
                 pass
 
             
         else:
-            return render (request,'students/child_detail/child_detail_form.html',{'form':form,'pk1':pk,'cls_studying':cls_studying,'academic_yr':academic_yr,'bank_name':bank_name,'diff_abled':diff_abled})
-        msg = "Child    " + form.cleaned_data['name'] + "  updated successfully"
-        messages.success(request, msg )
-        return HttpResponseRedirect(reverse('students_child_detail_list'))
 
-    
+            return render (request,'students/child_detail/child_detail_form.html',{'form':form,'pk1':pk,'cls_studying':cls_studying,'academic_yr':academic_yr,'diff_abled':diff_abled})
+        msg = "Child    " + str(child_edit.unique_id_no) +"    "+form.cleaned_data['name'] +"   "+form.cleaned_data['gender']+"   "+"Date of Birth -"+str(child_edit.dob) +"   "  + "  updated successfully"
+
+        messages.success(request, msg )        
+        return redirect('Child_detailDetailView',pk=pk)
+
+     
 
 
 class Child_detailWeekArchiveView(
@@ -930,11 +1066,11 @@ class Child_detailTransferView(View):
         pk=self.kwargs.get('pk')
         instance = Child_detail.objects.get(id=pk)
         form = Child_detailform(instance=instance)
-        if instance.class_studying_id == 1:
-            cannot_transfer='You cannot transfer this student record'
-            return render(request,'students/child_detail/child_detail_transfer.html',{'instance':instance,'cannot_transfer':cannot_transfer,'form':form,'pk1':pk})
-        else:
-            return render(request,'students/child_detail/child_detail_transfer.html',{'form':form,'pk1':pk})
+        # if instance.class_studying_id == 1:
+        #     cannot_transfer='You cannot transfer this student record'
+        #     return render(request,'students/child_detail/child_detail_transfer.html',{'instance':instance,'cannot_transfer':cannot_transfer,'form':form,'pk1':pk})
+        # else:
+        return render(request,'students/child_detail/child_detail_transfer.html',{'form':form,'pk1':pk})
 #    def get(self,request,**kwargs):
 #        pk=self.kwargs.get('pk')
 #        instance = Child_detail.objects.get(id=pk)
@@ -1073,7 +1209,7 @@ class Child_detailPoolView(View):
             try:
                 school = School.objects.get(school_name=our_school)
                 udise_code=school.school_code
-                print udise_code
+                
                 student_list = Child_detail.objects.filter(class_studying_id__in=classes,school_id = school,transfer_flag= 1).order_by('class_studying')
                 if len(student_list) > 0:
                     return render(request,'students/child_detail/child_detail_pool_detail.html',{'school_list':school_list,'udise_code':udise_code,'school':school ,'student_list':student_list})
@@ -1088,8 +1224,8 @@ class Child_detailPoolView(View):
         if request.POST.get('student_name'):
             name=self.request.POST.get('student_name')
             dob=datetime.strptime(request.POST.get('dob'), '%d/%m/%Y').strftime('%Y-%m-%d')
-            print name
-            print dob
+            
+            
             student_list_in_name_search=Child_detail.objects.filter(name__icontains=name,dob=dob)
             if len (student_list_in_name_search) > 1:
                 return render(request,'students/child_detail/child_detail_pool_detail.html',{'name':name,'dob':dob,'student_list_in_name_search':student_list_in_name_search})
@@ -1198,7 +1334,7 @@ class Child_admit(View):
             new_class=request.POST.get('new_class')
             admission_date=date.today()
             sid = self.kwargs.get('pk')
-            print sid
+            
             chld_detail = Child_detail.objects.get(id=sid)
             name=chld_detail.name
             dist_id = chld_detail.district
@@ -1211,8 +1347,8 @@ class Child_admit(View):
                 transfer_date=chld_detail.transfer_date
             else:
                 transfer_date='2014-01-01'
-            print transfer_date
-            print admission_date
+            
+            
             migrated_school = request.user.account.associated_with
             migrated_schl = School.objects.get(id=migrated_school)
             today = datetime.today().date()
@@ -1294,12 +1430,12 @@ class Child_admit(View):
                 classes=[1,2,3,4,5,6,7]
             udise_code=request.POST.get('udise_no')
             school=School.objects.get(school_code=udise_code)
-            print udise_code
+            
             student_list = Child_detail.objects.filter(class_studying_id__in=classes,school_id = school,transfer_flag= 1).order_by('class_studying')
             new_class=request.POST.get('new_class')
             admission_date=date.today()
             sid = self.kwargs.get('pk')
-            print sid
+            
             chld_detail = Child_detail.objects.get(id=sid)
             name=chld_detail.name
             dist_id = chld_detail.district
@@ -1312,8 +1448,8 @@ class Child_admit(View):
                 transfer_date=chld_detail.transfer_date
             else:
                 transfer_date='2014-01-01'
-            print transfer_date
-            print admission_date
+            
+            
             migrated_school = request.user.account.associated_with
             migrated_schl = School.objects.get(id=migrated_school)
             today = datetime.today().date()
@@ -1373,27 +1509,209 @@ class Child_admit(View):
         return render(request,'students/child_detail/child_detail_pool_detail.html',{'udise_code':udise_code,'school':school ,'student_list':student_list})
 
 class Child_detailDownloadProfileView(View):
-    
     def get(self,request,**kwargs):
         pk=self.kwargs.get('pk')
         school_code = self.kwargs.get('school_code')
         school_id = request.user.account.associated_with
         schl_id = School.objects.get(id=school_id)
-        # if request.user.account.user_category_id == 2:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 5:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
-        # elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
-        #     child_detail_list = Child_detail.objects.filter(staff_id=school_code).exclude(transfer_flag = 1)    
-        # else:
-        child_detail_list = Child_detail.objects.values("name","aadhaar_eid_number","aadhaar_uid_number","gender","dob","community__community_name","religion__religion_name","mothertounge__language_name","phone_number","child_differently_abled","differently_abled","child_disadvantaged_group","disadvantaged_group","subcaste__caste_name","nationality__nationality","house_address","native_district","pin_code","blood_group","mother_name","mother_occupation","father_name","father_occupation","parent_income","class_studying__class_studying","group_code__group_name","attendance_status","sport_participation","education_medium__education_medium","district__district_name","block__block_name","unique_id_no","school_id","staff_id","bank__bank","bank_account_no","schemes","academic_year__academic_year","transfer_flag","transfer_date","name_tamil","class_section","student_admitted_section","school_admission_no","bank_ifsc_code","sports_player","sports_name","community_certificate","child_status","height","weight","laptop_issued","laptop_slno","guardian_name").filter(staff_id=schl_id.school_code,class_studying_id=pk).exclude(transfer_flag = 1).order_by('name')
-        data = [['Name of the Student', 'Unique ID No', 'Class Studying', 'Section', 'Academic Year', 'Gender', 'Date of Birth', 'Community', 'Subcaste', 'Religion', 'Fathers Name', 'Mothers Name', 'Guardian Name', 'Address', 'Mother Tongue', 'Phone Number', 'Child Differently Abled', 'If yes', 'Child Disadvantaged Group', 'If yes', 'Aadhaar Eid Number', 'Aadhaar Uid Number'
+        child_detail_list = Child_detail.objects.values("name","aadhaar_eid_number","aadhaar_uid_number","gender","dob","community__community_name","religion__religion_name","mothertounge__language_name","phone_number","child_differently_abled","differently_abled","child_disadvantaged_group","disadvantaged_group","subcaste__caste_name","nationality__nationality","house_address","native_district","pin_code","blood_group","mother_name","mother_occupation","father_name","father_occupation","parent_income","class_studying__class_studying","group_code__group_name","attendance_status","sport_participation","education_medium__education_medium","district__district_name","block__block_name","unique_id_no","school_id","staff_id","bank_account_no","schemes","academic_year__academic_year","transfer_flag","transfer_date","name_tamil","class_section","student_admitted_section","school_admission_no","bank_ifsc_codenew","sports_player","sports_name","community_certificate","child_status","height","weight","laptop_issued","laptop_slno","guardian_name").filter(staff_id=schl_id.school_code,class_studying_id=pk).exclude(transfer_flag = 1).order_by('name')
+        data = [['S.No','Name of the Student', 'Unique ID No', 'Class Studying', 'Section', 'Academic Year', 'Gender', 'Date of Birth', 'Community', 'Subcaste', 'Religion', 'Fathers Name', 'Mothers Name', 'Guardian Name', 'Address', 'Mother Tongue', 'Phone Number', 'Child Differently Abled', 'If yes', 'Child Disadvantaged Group', 'If yes', 'Aadhaar Eid Number', 'Aadhaar Uid Number'
                 , 'Nationality', 'Native District', 'Pincode', 'Blood Group', 'Mothers Occupation', 'Fathers Occupation', 'Parent Income', 'Attendance Status', 'Sport Participation', 'Education Medium', 'Bank Account No', 'Bank Ifsc Code', 'If Yes', 'Student Admitted Section', 'School Admission No', 'Sports Player', 'Sports Name', 'Community Certificate'
                 , 'Child Status', 'Height (cm)', 'Weight (kg)', 'Laptop Issued', 'Laptop Slno']]
+        row_no = 0
         for i in child_detail_list:
-            data.append([i['name'], i['unique_id_no'], i['class_studying__class_studying'], i['class_section'], i['academic_year__academic_year'], i['gender'], i['dob'], i['community__community_name'], i['subcaste__caste_name'], i['religion__religion_name'], i['father_name'], i['mother_name'], i['guardian_name'], i['house_address'], i['mothertounge__language_name'], i['phone_number'], i['child_differently_abled'], i['differently_abled'], i['child_disadvantaged_group'], i['disadvantaged_group'], i['aadhaar_eid_number'], i['aadhaar_uid_number']
-                , i['nationality__nationality'], i['native_district'], i['pin_code'], i['blood_group'], i['mother_occupation'], i['father_occupation'], i['parent_income'], i['attendance_status'], i['sport_participation'], i['education_medium__education_medium'], i['bank_account_no'], i['bank_ifsc_code'], i['schemes']
+            row_no += 1
+            data.append([row_no,i['name'], str(i['unique_id_no']), i['class_studying__class_studying'], i['class_section'], i['academic_year__academic_year'], i['gender'], i['dob'], i['community__community_name'], i['subcaste__caste_name'], i['religion__religion_name'], i['father_name'], i['mother_name'], i['guardian_name'], i['house_address'], i['mothertounge__language_name'], i['phone_number'], i['child_differently_abled'], i['differently_abled'], i['child_disadvantaged_group'], i['disadvantaged_group'], i['aadhaar_eid_number'], i['aadhaar_uid_number']
+                , i['nationality__nationality'], i['native_district'], i['pin_code'], i['blood_group'], i['mother_occupation'], i['father_occupation'], i['parent_income'], i['attendance_status'], i['sport_participation'], i['education_medium__education_medium'], i['bank_account_no'], i['bank_ifsc_codenew'], i['schemes']
                 , i['student_admitted_section'], i['school_admission_no'], i['sports_player'], i['sports_name'], i['community_certificate'], i['child_status'], i['height'], i['weight'], i['laptop_issued'], i['laptop_slno']])
         return ExcelResponse(data, 'Child_Profile')
+
+
+class Child_detailSectionListView(View):
+    @method_decorator(login_required)
+    def get(self,request,**kwargs):
+        try:
+            
+            
+
+            school_code = self.request.GET.get('school_code')
+            
+            if request.user.account.user_category_id == 1:
+                pass
+            else:
+                school_details = School.objects.get(school_code=school_code)
+          
+            # if request.user.account.user_category_id == 1:
+            #     pass
+            # else:
+            school_details = School.objects.get(id=request.user.account.associated_with)
+            schl_id = school_details.id
+            schl_cat=school_details.category_id
+            
+            if request.user.account.user_category_id == 2:
+                child_detail_list = School_child_count.objects.get(school_id=schl_id, school__block_id= request.user.account.associated_with,transfer_flag__in=[0,2])
+            elif request.user.account.user_category_id == 3:
+                child_detail_list = School_child_count.objects.get(school_id=schl_id, school__district_id= request.user.account.associated_with,transfer_flag__in=[0,2])
+            elif request.user.account.user_category_id == 5:
+                child_detail_list = School_child_count.objects.get(school_id=schl_id, school__block_id= request.user.account.associated_with,transfer_flag__in=[0,2])
+            elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+                child_detail_list = School_child_count.objects.get(school_id=schl_id, school__district_id= request.user.account.associated_with,transfer_flag__in=[0,2])
+            elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+                child_detail_list = School_child_count.objects.get(school_id=schl_id,transfer_flag__in=[0,2])    
+            else:
+                child_detail_list = Child_detail.objects.filter(school_id=request.user.account.associated_with,transfer_flag__in=[0,2])
+            
+            I = child_detail_list.filter(class_studying_id=1).count()
+            II = child_detail_list.filter(class_studying_id=2).count()
+            III = child_detail_list.filter(class_studying_id=3).count()
+            IV = child_detail_list.filter(class_studying_id=4).count()
+            V = child_detail_list.filter(class_studying_id=5).count()
+            VI = child_detail_list.filter(class_studying_id=6).count()
+            VII = child_detail_list.filter(class_studying_id=7).count()
+            VIII = child_detail_list.filter(class_studying_id=8).count()
+            IX = child_detail_list.filter(class_studying_id=9).count()
+            X = child_detail_list.filter(class_studying_id=10).count()
+            XI = child_detail_list.filter(class_studying_id=11).count()
+            XII = child_detail_list.filter(class_studying_id=12).count()
+            totalcount=I+II+III+IV+V+VI+VII+VIII+IX+X+XI+XII
+            return render(request,'students/child_detail/object_table_section_list.html',{'child_detail_list':child_detail_list,'I':I,'II':II,'III':III,'IV':IV,'V':V,'VI':VI,'VII':VII,'VIII':VIII,'IX':IX,'X':X,'XI':XI,'XII':XII,'school_code':school_code,'schl_cat':schl_cat,'totalcount':totalcount})
+        except School_child_count.DoesNotExist:
+            messages.add_message(
+                self.request,
+                messages.ERROR,"No School."
+            )
+            return render(request,'students/child_detail/object_table_section_list.html')
+
+
+class class_sectionwiseView(View):
+    @method_decorator(login_required)
+    def get(self,request,**kwargs):
+       
+        form=Child_detailform()
+        cl_id = self.kwargs.get('cl_id')
+        school_id = request.user.account.associated_with
+        schl_id = School.objects.get(id=school_id)
+     
+        child_detail_main_list=Child_detail.objects.filter(school_id=request.user.account.associated_with,class_studying_id=cl_id).values('class_section').annotate(dcount=Count('class_section')).exclude(transfer_flag = 1)
+
+        return render (request,'students/child_detail/section_wise.html',locals())
+
+class Child_detail_Sectionwise_detail(View):
+    @method_decorator(login_required)
+    def get(self,request,**kwargs):
+        class_id = self.kwargs.get('cl_id')
+        section_id = self.kwargs.get('sec_id')
+        schl_id = School.objects.get(id=request.user.account.associated_with)
+        
+        if request.user.account.user_category_id == 2:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 5:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id).exclude(transfer_flag = 1)    
+        else:
+            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id,class_studying_id=class_id,class_section=section_id).exclude(transfer_flag = 1)
+        
+     
+        paginator = Paginator(child_detail_list, 50)
+        page = request.GET.get('page')
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            page_obj = paginator.page(paginator.num_pages)       
+        return render(request,'students/child_detail/sectionwise_details.html',{'page_objs':page_obj,'child_detail_list':child_detail_list })
+
+class child_pdfview(View):
+    #@never_cache
+    def get(self,request,**kwargs):   
+        if request.user.is_authenticated():
+            pk=self.kwargs.get('pk')
+
+            student = Child_detail.objects.get(id=pk)
+            response = HttpResponse(content_type='application/pdf')
+            a=student.unique_id_no
+            filename = str(a)
+            photo=settings.MEDIA_URL
+            root=settings.MEDIA_ROOT
+            
+            response['Content-Disposition'] = 'attachement; filename={0}.pdf'.format(filename)
+            pdf=render_to_pdf(
+                    'students/child_detail/print_child.html',
+                    {
+                        'student':student,
+                        'pagesize':'A4',
+                        'MEDIA_URL':root,
+                                                
+                    }
+                )
+            response.write(pdf)
+            return response
+        else:
+            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+#@never_cache
+def render_to_pdf(template_src, context_dict):
+    template = get_template(template_src)
+    context = Context(context_dict)
+    html  = template.render(context)
+    result = StringIO.StringIO()
+    pdf = pisa.pisaDocument(StringIO.StringIO(html.encode("UTF-8")),result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+    return HttpResponse('We had some errors<pre>%s</pre>' % escape(html))
+
+class classwise_pdfview(View):
+    #@never_cache
+    def get(self,request,**kwargs):
+        class_id = self.kwargs.get('pk')
+
+        school_code = self.kwargs.get('school_code')
+        school_id = request.user.account.associated_with
+        
+        schl_id = School.objects.get(id=school_id)
+        child_detail_main_list = Child_detail.objects.filter(district_id = schl_id.district_id , block_id = schl_id.block_id)
+                
+        if request.user.account.user_category_id == 2:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 5:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, block_id=request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id, district_id= request.user.account.associated_with).exclude(transfer_flag = 1)
+        elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+            child_detail_list = Child_detail.objects.filter(school__id=schl_id.id).exclude(transfer_flag = 1)    
+        else:
+            child_detail_list = Child_detail.objects.filter(school_id=schl_id.id).exclude(transfer_flag = 1)
+        
+        classwise_detail = child_detail_list.filter(class_studying_id=class_id).order_by('name','gender')
+
+        classwise_detail_count = classwise_detail.count()
+       
+        child_detail_list = Child_detail.objects.filter(school_id=schl_id.id).exclude(transfer_flag = 1)
+        classwise_detail = child_detail_list.filter(class_studying_id=class_id)
+        response = HttpResponse(content_type='application/pdf')
+        
+        a=class_id
+        filename = str(a)
+        
+        response['Content-Disposition'] = 'attachement; filename={0}.pdf'.format(filename)
+        pdf=render_to_pdf(
+                'students/child_detail/classwise_pdf.html',
+                {
+                    'classwise_detail':classwise_detail,
+                    'pagesize':'A4',
+                    'a':a,
+                    
+                                            
+                }
+            )
+        response.write(pdf)
+        return response
+        
+

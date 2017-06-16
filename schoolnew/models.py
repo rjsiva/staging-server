@@ -41,7 +41,7 @@ class Block(caching.base.CachingMixin, models.Model):
     district = models.ForeignKey('District')
     objects = caching.base.CachingManager()   
     def __unicode__(self):
-        return u'%s' % (self.block_name)
+        return u'%d' % (self.id)
 
 
 # """
@@ -51,6 +51,7 @@ class Block(caching.base.CachingMixin, models.Model):
 class Edn_dist_block(caching.base.CachingMixin, models.Model):
     edn_dist_name = models.CharField(max_length=100)
     edn_dist_id = models.PositiveIntegerField()
+    district_code = models.PositiveIntegerField()
     block = models.ForeignKey('Block')
     objects = caching.base.CachingManager()   
     def __unicode__(self):
@@ -64,9 +65,10 @@ class Edn_dist_block(caching.base.CachingMixin, models.Model):
 class Edn_dist_mas(caching.base.CachingMixin, models.Model):
     edn_dist_name = models.CharField(max_length=100)
     district = models.ForeignKey('District')
+    edu_dist = models.CharField(max_length=50,blank=True,null=True)
     objects = caching.base.CachingManager()   
     def __unicode__(self):
-        return u'%s' % (self.edn_dist_name)
+        return u'%s%s%s' % (self.district,self.edn_dist_name,self.edu_dist)
 
 
 # """
@@ -103,7 +105,7 @@ class School_department(caching.base.CachingMixin, models.Model):
 		return u'%s' % (self.department)
 
 class School_category(caching.base.CachingMixin, models.Model):
-	category_code = models.CharField(max_length=100)
+	category_code = models.CharField(max_length=5)
 	category = models.CharField(max_length=100)
 	school_dept= models.ForeignKey(School_department)
 	objects = caching.base.CachingManager()
@@ -476,7 +478,7 @@ class Basicinfo(caching.base.CachingMixin, models.Model):
 		Corpn_habitation, chained_field='corpn_zone', chained_model_field='corpn_zone', auto_choose=True,blank=True,null=True)
 	edu_district = ChainedForeignKey(
 		Edn_dist_block, chained_field='block', chained_model_field='block', auto_choose=True,blank=True,null=True)
-
+	edu_dist_id=models.BigIntegerField(blank=True,null=True)
 	address  = models.CharField(max_length=200,blank=True,null=True)
 	pincode = models.PositiveIntegerField(blank=True,null=True)
 	stdcode = models.CharField(max_length=10,blank=True,null=True)
@@ -575,13 +577,13 @@ class Academicinfo(caching.base.CachingMixin, models.Model):
 	iss_auth = models.CharField(max_length=50,blank=True,null=True)
 	start_order = models.CharField(max_length= 200,blank=True,null=True)
 	start_yr = models.CharField(max_length= 10,blank=True,null=True)
-	recog_typ = models.CharField(max_length= 12,blank=True,null=True)
+	recog_typ = models.CharField(max_length= 20,blank=True,null=True)
 	recog_ord = models.CharField(max_length= 200,blank=True,null=True)
 	recog_dt_fm = models.DateField(blank=True,null=True)
 	recog_dt_to = models.DateField(blank=True,null=True)
 	hssstart_order = models.CharField(max_length= 200,blank=True,null=True)
 	hssstart_yr = models.CharField(max_length= 10,blank=True,null=True)
-	hssrecog_typ = models.CharField(max_length= 12,blank=True,null=True)
+	hssrecog_typ = models.CharField(max_length= 20,blank=True,null=True)
 	hssrecog_ord = models.CharField(max_length= 200,blank=True,null=True)
 	hssrecog_dt_fm = models.DateField(blank=True,null=True)
 	hssrecog_dt_to = models.DateField(blank=True,null=True)	

@@ -407,8 +407,8 @@ DETAILS OF LEAVE TRAVEL CONCESSION(LTC) </h6></b></center>
 
         <td> {{ i.from_year }}</td>
          <td> {{ i.block_yeear }}</td>
-        <td> {{ i.leave_from }}</td>
-        <td> {{ i.leave_to }}</td>
+        <td> {{ i.leave_from  |date:"d-m-Y" }}</td>
+        <td> {{ i.leave_to  |date:"d-m-Y"}}</td>
         <td> {{ i.destination_type }}</td>
         <td> {{ i.leave_type }}</td>
         <td> {{ i.sanction_amt }}</td>

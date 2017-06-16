@@ -23,16 +23,28 @@ class Teacher_tpf_loan_create(View):
             else:
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id            
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count
-            edu_list = Teacher_GPF_loan.objects.filter(teacherid_id=tid) 
-            if edu_list.count()==0: 
-                messages.success(request, 'No Data') 
-            return render(request,'teachers/tpf_loan/teacher_tpf_loan_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+         
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count
+                edu_list = Teacher_GPF_loan.objects.filter(teacherid_id=tid) 
+                if edu_list.count()==0: 
+                    messages.success(request, 'No Data') 
+                return render(request,'teachers/tpf_loan/teacher_tpf_loan_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     
@@ -81,21 +93,37 @@ class teacher_tpf_loan_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid)
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id            
-            staff_name=staff_id.name
-            staff_uid=staff_id.count        
-            instance=Teacher_GPF_loan.objects.get(id=pk1)       
-            form = Teacher_GPF_loanform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            sanctioned_amt=instance.sanctioned_amt
-            installments = instance.installments  
-            monthly_installment =instance.monthly_installment
-            first_insta_date =instance.first_insta_date
-            sanctioned_order =instance.sanctioned_order
-            sanctioned_date =instance.sanctioned_date         
-            return render(request,'teachers/tpf_loan/teacher_tpf_loan_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+          
+                staff_name=staff_id.name
+                staff_uid=staff_id.count        
+                if(Teacher_GPF_loan.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_GPF_loan.objects.get(id=pk1,teacherid_id=tid)       
+                    form = Teacher_GPF_loanform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    sanctioned_amt=instance.sanctioned_amt
+                    installments = instance.installments  
+                    monthly_installment =instance.monthly_installment
+                    first_insta_date =instance.first_insta_date
+                    sanctioned_order =instance.sanctioned_order
+                    sanctioned_date =instance.sanctioned_date         
+                    return render(request,'teachers/tpf_loan/teacher_tpf_loan_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

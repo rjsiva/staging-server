@@ -489,7 +489,7 @@ DETAILS OF STAFF'S FAMILY</h6></center>
         <td>{{forloop.counter}}</td>  
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none">{{ staff_name |upper}} </td> 
         <td> {{ i.name |upper }}</td> 
-        <td> {{ i.dob }}</td> 
+        <td> {{ i.dob  |date:"d-m-Y"}}</td> 
         <td> {{ i.relation |upper}}</td>
         <td> {{ i.aadhaar_number}}</td>
         <td><center><a href="/teachers/teacher_family_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></center></td> 

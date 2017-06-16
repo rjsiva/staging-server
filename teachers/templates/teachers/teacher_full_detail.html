@@ -19,7 +19,14 @@
                 }
             }
         </style>
+<center>{% if entry == 1 %}
+<a  class="btn btn-large btn-success" href='/teachers/teacher_update/{{teacher.id}}'><b>Update</a>
+<a class="btn btn-large btn-success" href='/teachers/Teacher_transfer_parent/{{teacher.id}}' ><b>{% trans "Transfer" %}</a>
+<a class="btn btn-large btn-success" href='/teachers/teacher_promotion/{{teacher.id}}' ><b>{% trans "Promotion Within Same School" %}</b></a>
+{% endif %}
 
+<a  class="btn btn-large btn-success" href='/teachers/printpdf/{{teacher.id}}'><b>Print PDF</a>
+<br><br></center>
 <table width="100%" border="2" align="center">
   <tr><th style="width:750px;border:0px; text-align:center;">Photo</th>
       <th style="width:1000px;border:0px; text-align:center;">Basic Information</th></tr>
@@ -98,8 +105,8 @@
       <tr>
       <td valign="TOP">
         <table style="margin-left:10px"><tr> <td style="border:0px;" > Gender </td><td style="border:0px;" > : </td> <td style="border:0px;" >{{ teacher.gender |upper }} </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Birth </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{{ teacher.dob |upper }} </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Retirement </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{{ teacher.dor |upper }} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Birth </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{{ teacher.dob  |date:"d-m-Y" }} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Retirement </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{{ teacher.dor  |date:"d-m-Y" }} </td> </tr>
             
              
 
@@ -137,28 +144,28 @@
                 <td valign="TOP">
         <table style="margin-left:10px">
 
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in Service / Designation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.dofags  %} {{ teacher.dofags |upper }}/ {{ teacher.designation_fags  |upper}}  {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in Service / Designation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.dofags  %} {{ teacher.dofags  |date:"d-m-Y" }}/ {{ teacher.designation_fags  |upper}}  {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
             
 
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in School Education Departmment </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.dofsed %} {{ teacher.dofsed |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td style="border:0px;" > Date of Joining in the Present School / Office</td><td style="border:0px;" > : </td> <td style="border:0px;" >{{ teacher.dojocs |upper}} / {{teacher.dojocs_session | upper}} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in School Education Departmment </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.dofsed %} {{ teacher.dofsed  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;" > Date of Joining in the Present School / Office</td><td style="border:0px;" > : </td> <td style="border:0px;" >{{ teacher.dojocs  |date:"d-m-Y"}} / {{teacher.dojocs_session | upper}} </td> </tr>
 
-            <tr> <td style="border:0px;padding-top:10px;" >Date of Regularisation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.doregu %} {{ teacher.doregu |upper }}/ {{teacher.doregu_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Probation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.doprob %} {{ teacher.doprob |upper }} / {{teacher.doprob_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" >Date of Regularisation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.doregu %} {{ teacher.doregu  |date:"d-m-Y" }}/ {{teacher.doregu_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Probation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.doprob %} {{ teacher.doprob  |date:"d-m-Y"}} / {{teacher.doprob_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Month of Increment </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.increment_month %} {{ teacher.increment_month |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Passport No. </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.passport_no %} {{ teacher.passport_no |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Issue</td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.passport_date_from %} {{ teacher.passport_date_from |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Issue</td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.passport_date_from %} {{ teacher.passport_date_from  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Expiry</td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.passport_date_to %} {{ teacher.passport_date_to |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Expiry</td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.passport_date_to %} {{ teacher.passport_date_to  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
             <tr> <td style="border:0px;padding-top:10px;" > Differently Abled </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.differently_abled_type %} {{ teacher.differently_abled_type }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in Aided School  </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.appointed_aided_date %} {{ teacher.appointed_aided_date |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Appointment in Aided School  </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.appointed_aided_date %} {{ teacher.appointed_aided_date  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Minority Language </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.language_test %} {{ teacher.language_test |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" >Date of Certificate Evaluation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.evaluation_date %} {{ teacher.evaluation_date |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" > Date of Unit Transfer </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.uta_date %} {{ teacher.uta_date }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" >Date of Certificate Evaluation </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.evaluation_date %} {{ teacher.evaluation_date  |date:"d-m-Y" }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Date of Unit Transfer </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.uta_date %} {{ teacher.uta_date  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
             <tr> <td style="border:0px;padding-top:10px;" > Typing Tamil Junior</td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.tamil_jr %} Yes  {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" >  Typing English Junior </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" > {% if teacher.eng_jr %}  Yes   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
@@ -174,14 +181,7 @@
 <br>
 <br>
 <br>  
-{% if entry == 1 %}
-<a  class="btn btn-large btn-success" href='/teachers/teacher_update/{{teacher.id}}'>Update</a>
-<a class="btn btn-large btn-success" href='/teachers/Teacher_transfer_parent/{{teacher.id}}' >{% trans "Transfer" %}</a>
-<a class="btn btn-large btn-success" href='/teachers/teacher_promotion/{{teacher.id}}' ><b>{% trans "Promotion Within Same School" %}</b></a>
-{% endif %}
 
-<a  class="btn btn-large btn-success" href='/teachers/printpdf/{{teacher.id}}'>Print PDF</a>
-<br><br>
 <style type="text/css">
 .mytable {
 margin:0px;padding:0px;

@@ -481,7 +481,7 @@ $(document).ready(function(){
     cvdarea();          
     playarea();        
     award_show();
-    fsadf
+    trans_show();
 });
 
 </script>
@@ -1673,7 +1673,7 @@ $(document).ready(function(){
 
 <div class="form-group"> <b>{% trans "No. Permanent work tables in Zoolgy Lab: " %}</b><input id="zoo_lab" type="number" min="0" name="zoo_lab" value="{{zoo_lab}}" class="form-control" maxlength="3"></div><span class="error_message">{{form.zoo_lab.errors}}</span>
 
-<div class="form-group"> <b>{% trans "Whether the Gas cylinder in the Chemistry Lab placed outside the Lab safely:" %}</b><select id="gas_cylin" class="form-control" name="gas_cylin" value="gas_cylin" >
+<div class="form-group"> <b>{% trans "Whether the Gas cylinder in the Chemistry Lab placed outside the Lab safely:" %}</b><select id="gas_cylin" class="form-control mandatory" name="gas_cylin" value="gas_cylin" >
         {% if gas_cylin == True %}
         <option value = True selected="selected">Yes</option>
         <option value = False>No</option> 

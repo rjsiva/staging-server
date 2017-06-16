@@ -472,11 +472,11 @@ var forEach = function(object, block, context) {
         <td> {{ i.pri_tea_id }}</td>      
         <td > <a href="/teachers/teacher_full_detail_private/{{i.pri_tea_id}}"style="text-decoration: none" ><p class ="text-capitalize">{{ i.name | upper}}</p></td>
 
-		<td> {{ i.dob | upper }}</td>
+		<td> {{ i.dob  |date:"d-m-Y" }}</td>
 		<td> {{ i.gender | upper }}</td>
     <td> {{ i.designation.designation | upper}}</td>
     <td>{{ i.subject | upper}}</td>
-    <td> {{i.doa | upper}}</td>
+    <td> {{i.doa  |date:"d-m-Y"}}</td>
 		
 
   

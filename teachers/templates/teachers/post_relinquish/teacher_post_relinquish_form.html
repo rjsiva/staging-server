@@ -333,12 +333,12 @@ function crucial(birth) {
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none" rowspan="1">{{ i.teacherid.name|upper }} </td>       
         <td> {{ i.current_designation.designation|upper  }}</td> 
         <td> {{ i.promoted_to |upper}}</td> 
-        <td>{{i.date_of_relinqui}}</td>
+        <td>{{i.date_of_relinqui  |date:"d-m-Y"}}</td>
        
         <td> {{ i.order_no |upper}}</td>
        
-        <td> {{ i.crucial_date_for_promotion }}</td>
-        <td> {{ i.promo_next_eligible_date }}</td>
+        <td> {{ i.crucial_date_for_promotion  |date:"d-m-Y" }}</td>
+        <td> {{ i.promo_next_eligible_date  |date:"d-m-Y"}}</td>
 
 
         <td><a href="/teachers/teacher_relinquis_update/{{tid}}/{{i.id}}/"><button type="button" class="btn btn-warning">Update</button></a></td> 

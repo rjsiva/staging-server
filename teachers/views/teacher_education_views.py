@@ -24,23 +24,36 @@ class Teacher_education_create(View):
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)   
 
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)  
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id      
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count 
-            dob=staff_id.dob 
-            form=educationform()        
-            qualification=Qualification.objects.all().order_by('qualification')
-            subject=Edu_subjects.objects.all()
-            medium_value=Medium.objects.all()
-            month_value=Months.objects.all()
-            class_value=Distinction.objects.all()
-            edu_list = Teacher_edu.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request,'No Data')        
-            return render(request,'teachers/education/teacher_education_form_new.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                school_id =staff_id.school_id      
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count 
+                dob=staff_id.dob 
+                form=educationform()        
+                qualification=Qualification.objects.all().order_by('qualification')
+                subject=Edu_subjects.objects.all()
+                medium_value=Medium.objects.all()
+                month_value=Months.objects.all()
+                class_value=Distinction.objects.all()
+                edu_list = Teacher_edu.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0:
+                    messages.success(request,'No Data')        
+                return render(request,'teachers/education/teacher_education_form_new.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -88,29 +101,50 @@ class teacher_edu_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid) 
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id      
-            dob=staff_id.dob          
-            staff_name=staff_id.name
-            staff_uid=staff_id.count       
-            instance=Teacher_edu.objects.get(id=pk1)     
-            qualification=Qualification.objects.all()
-            subject=Edu_subjects.objects.all()
-            medium_value=Medium.objects.all()
-            month_value=Months.objects.all()
-            class_value=Distinction.objects.all()        
-            form = educationform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            qualification = instance.qualification
-            subject=instance.subject
-            medium_of_instruction = instance.medium_of_instruction  
-            month =instance.month  
-            year =instance.year
-            university =instance.university
-            remarks =instance.remarks       
-            return render(request,'teachers/education/teacher_education_form_new.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                school_id =staff_id.school_id      
+                dob=staff_id.dob          
+                staff_name=staff_id.name
+                staff_uid=staff_id.count 
+                if (Teacher_edu.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+
+                    instance=Teacher_edu.objects.get(id=pk1,teacherid_id=tid)     
+
+                    qualification=Qualification.objects.all()
+                    subject=Edu_subjects.objects.all()
+                    medium_value=Medium.objects.all()
+                    month_value=Months.objects.all()
+                    class_value=Distinction.objects.all()        
+                    form = educationform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    qualification = instance.qualification
+                    subject=instance.subject
+                    medium_of_instruction = instance.medium_of_instruction  
+                    month =instance.month  
+                    year =instance.year
+                    university =instance.university
+                    remarks =instance.remarks       
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+
+                return render(request,'teachers/education/teacher_education_form_new.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
+            
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 

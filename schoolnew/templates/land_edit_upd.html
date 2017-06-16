@@ -258,7 +258,7 @@ function date_future_chk(inpid)
        
        if(go_dt > today)
        {
-           alert("Pl. Enter correct G.O. date, future date can not be entered ");
+           alert("Pl. Enter correct date, future date can not be entered ");
            document.getElementById(inpid).focus();
            document.getElementById(inpid).value="";
            inpid.style.backgroundColor = "MistyRose";
@@ -382,7 +382,7 @@ Details of school land </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="ec_cer_dt" id="ec_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_dt.value|date:"d/m/Y"  }}" maxlength="10" > 
+<input class="form-control"   name="ec_cer_dt" id="ec_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('ec_cer_dt')"  maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.ec_cer_dt.errors}}</span>
 
@@ -392,7 +392,7 @@ Details of school land </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="ec_cer_fm" id="ec_cer_fm" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_fm.value|date:"d/m/Y"  }}" maxlength="10" > 
+<input class="form-control"   name="ec_cer_fm" id="ec_cer_fm" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_fm.value|date:"d/m/Y"  }}" onblur="date_future_chk('ec_cer_fm')" maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.ec_cer_fm.errors}}</span>
 
@@ -402,7 +402,7 @@ Details of school land </h3></center>
            <i class="fa fa-calendar"></i>
        </div>
        <!-- getec(frmlnd.ec_cer_fm,frmlnd.ec_cer_to); -->
-<input class="form-control"   name="ec_cer_to" id="ec_cer_to" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_to.value|date:"d/m/Y"  }}" onblur="toyear();" maxlength="10" > 
+<input class="form-control"   name="ec_cer_to" id="ec_cer_to" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.ec_cer_to.value|date:"d/m/Y"  }}" onblur="date_future_chk('ec_cer_to'),toyear()" maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.ec_cer_to.errors}}</span>  
 

@@ -58,7 +58,7 @@
         <td> {{ i.leave_from |upper}}</td> 
         <td> {{ i.leave_to |upper }}</td> 
         <td> {{ i.order_no |upper }}</td> 
-        <td> {{ i.order_date |upper }}</td> 
+        <td> {{ i.order_date  |date:"d-m-Y" }}</td> 
  
   </tr>
   {% endfor %}
@@ -83,11 +83,11 @@
   <tr>
   <td align="center">{{forloop.counter}}</td> 
   
-        <td> {{ i.surrender_date |upper}}</td> 
+        <td> {{ i.surrender_date  |date:"d-m-Y"}}</td> 
         <td> {{ i.current_balance_days |upper}}</td> 
         <td> {{ i.no_of_days |upper}}</td> 
         <td> {{ i.order_no |upper}}</td> 
-        <td> {{ i.order_date |upper}}</td> 
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td> 
 
   </tr>
   {% endfor %}
@@ -119,7 +119,7 @@
   <td align="center">{{forloop.counter}}</td> 
    <td>{{ i.fund_name|upper }}</td> 
 
-     <td> {{ i.nominee_name.name|upper}}-{{i.nominee_name.relation|upper}}-{{i.nominee_name.dob}}</td> 
+     <td> {{ i.nominee_name.name|upper}}-{{i.nominee_name.relation|upper}}-{{i.nominee_name.dob  |date:"d-m-Y"}}</td> 
       
        
         <td> {{ i.percentage }}</td> 
@@ -156,9 +156,9 @@
         <td> {{ i.sanctioned_amt }}</td> 
         <td> {{ i.installments }}</td>
         <td> {{ i.monthly_installment }}</td>
-        <td> {{ i.first_insta_date |upper }}</td> 
+        <td> {{ i.first_insta_date  |date:"d-m-Y" }}</td> 
         <td> {{ i.sanctioned_order |upper}}</td> 
-        <td> {{ i.sanctioned_date |upper}}</td> 
+        <td> {{ i.sanctioned_date  |date:"d-m-Y"}}</td> 
 
   </tr>
   {% endfor %}
@@ -188,9 +188,9 @@
   <td> {{ i.sanctioned_amt }}</td> 
         <td> {{ i.installments }}</td> 
         <td> {{ i.monthly_installment }}</td> 
-        <td> {{ i.first_insta_date |upper}}</td> 
+        <td> {{ i.first_insta_date  |date:"d-m-Y"}}</td> 
         <td> {{ i.sanctioned_order |upper}}</td> 
-        <td> {{ i.sanctioned_date |upper}}</td> 
+        <td> {{ i.sanctioned_date  |date:"d-m-Y"}}</td> 
   </tr>
   {% endfor %}
   
@@ -220,9 +220,9 @@
  <td> {{ i.prop_description|upper }}</td>
         <td> {{ i.purchase_value }}</td>
         <td> {{ i.source|upper }}</td>        
-        <td> {{ i.purchase_doc_date |upper }}</td>
+        <td> {{ i.purchase_doc_date  |date:"d-m-Y" }}</td>
         <td> {{ i.present_value }}</td>       
-        <td> {{ i.order_date |upper}}</td>
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td>
     
   </tr>
   {% endfor %}
@@ -252,13 +252,13 @@
   <td align="center">{{forloop.counter}}</td> 
     <td> {{ i.prop_description|upper }}</td>
         <td> {{ i.doc_number |upper}}</td>
-        <td> {{ i.doc_date |upper}}</td>
+        <td> {{ i.doc_date  |date:"d-m-Y"}}</td>
         <td> {{ i.place|upper }}</td>
         <td> {{ i.acquired_source |upper}}</td>
         <td> {{ i.purchase_value }}</td>
         <td> {{ i.present_value }}</td>
         <td> {{ i.order_no |upper}}</td>
-        <td> {{ i.order_date }}</td>
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td>
     
   </tr>
   {% endfor %}
@@ -295,7 +295,7 @@
         <td> {{ i.leave_type |upper }}</td>
         <td> {{ i.sanction_amt }}</td>
     <td> {{ i.sanction_order |upper}}</td>
-    <td> {{ i.sanction_date |upper }}</td>
+    <td> {{ i.sanction_date  |date:"d-m-Y" }}</td>
   </tr>
   {% endfor %}
   </table>
@@ -324,7 +324,7 @@
   <td align="center"> {{ i.post_name_charge_committed.designation |upper}}</td>
   <td align="center"> {{ i.gist |upper}}</td>
   <td align="center"> {{ i.charge_memo_number |upper }}</td>
-  <td align="center"> {{ i.charge_memo_date |upper}}</td>
+  <td align="center"> {{ i.charge_memo_date  |date:"d-m-Y"}}</td>
  
   <td align="center"> {{ i.type_charge_memo }}</td>
    <td align="center">

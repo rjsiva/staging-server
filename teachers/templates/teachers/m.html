@@ -1,8 +1,8 @@
 {% extends 'teachers/base.html'|pjax:request %}
 {% load i18n %}
-{% block content %}
-{% load static %}
 
+{% load static %}
+{% block content %}
 
 
 <script type="text/javascript" src="{% static 'js/tipped.js' %}"></script>
@@ -24,7 +24,7 @@
   {% csrf_token %}
  
   
-{% if request.user.account.user_category_id == 18 %}
+
 <div class="alert alert-success">
   <strong>Staff's Data Successfully Transferred..........
 </div>

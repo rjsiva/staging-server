@@ -3,19 +3,24 @@ from django.contrib.auth.decorators import login_required
 
 from students.base_views import barcode_generator
 from students.views.child_detail_views import *
-from students.views.nominal_roll_reports import *
 urlpatterns = patterns('',
     url(
         regex=r'^id_card/?(?P<uid>\d+?)?/$',
         view=barcode_generator,
         name='students_barcode_generator'
     ),
+    url(
+        regex=r'^class_sectionwiseView/(?P<cl_id>\d+?)/$',
+        view=login_required(class_sectionwiseView.as_view()),
+        name='class_sectionwiseView'
+    ),
     
     url(
-        regex=r'^child_detail/nominal_roll_list/(?P<pk>\d+?)/$',
-        view=Nominal_roll_list.as_view(),
-        name='nominal_roll_list'
-        ),
+        regex=r'^Child_detail_Sectionwise_detail/(?P<cl_id>\d+?)/(?P<sec_id>\w+?)/$',
+        view=login_required(Child_detail_Sectionwise_detail.as_view()),
+        name='Child_detail_Sectionwise_detail'
+    ),
+
 
     url(
         regex=r'^child_admit/(?P<pk>\d+?)/$',
@@ -56,7 +61,7 @@ urlpatterns = patterns('',
     url(
         regex=r'^child_detail/(?P<pk>\d+?)/$',
         view=login_required(Child_detailDetailView.as_view()),
-        name='students_child_detail_detail'
+        name='Child_detailDetailView'
     ),
     url(
         regex=r'^child_detail_classwise/(?P<cl_id>\d+?)/$',
@@ -64,16 +69,22 @@ urlpatterns = patterns('',
         name='students_child_classwise_detail'
     ),
 
-    url(
-        regex=r'^child_detail_classwiselist/(?P<cl_id>\d+?)/(?P<school_code>\d+?)/$',
-        view=login_required(Child_detailClasswiseListView.as_view()),
-        name='students_child_classwiselist_detail'
-    ),
+    # url(
+    #     regex=r'^child_detail_classwiselist/(?P<cl_id>\d+?)/(?P<school_code>\d+?)/$',
+    #     view=login_required(Child_detailClasswiseListView.as_view()),
+    #     name='students_child_classwiselist_detail'
+    # ),
     url(
         regex=r'^child_detail/$',
         view=login_required(Child_detailListView.as_view()),
         name='students_child_detail_list'
     ),
+    url(
+        regex=r'^Child_detailSectionListView/$',
+        view=login_required(Child_detailSectionListView.as_view()),
+        name='students_child_detail_section_list'
+    ),
+
     url(
         regex=r'^child_detail/archive/(?P<year>\d{4})/'
                '(?P<month>\d{1,2})/$',
@@ -122,6 +133,17 @@ urlpatterns = patterns('',
         view=login_required(Child_detailDownloadProfileView.as_view()),
         name='students_child_detail_download_profile'
     ),
+    url(
+        regex=r'^child_detail/child_pdfview/(?P<pk>\d+?)/$',
+        view=login_required(child_pdfview.as_view()),
+        name='students_child_detail_child_pdfview'
+    ),
+    url(  
+        regex=r'^classwise_pdfview/(?P<pk>\d+?)/$',
+        view=login_required(classwise_pdfview.as_view()),
+        name='classwise_pdfview'
+    ),
+    
 )
 
 
@@ -298,4 +320,13 @@ urlpatterns += patterns('',
         view=login_required(StateView.as_view()),
         name='state_detail'
     ),
+)
+
+
+from students.views.nominal_roll_reports import *
+urlpatterns += patterns('',
+    url(regex=r'^child_detail/nominal_roll_list/10/$',view=Nominal_roll_list_10.as_view(),name='nominal_roll_list_10'),
+    url(regex=r'^child_detail/nominal_roll_list/11/$',view=Nominal_roll_list_11.as_view(),name='nominal_roll_list_11'),
+    url(regex=r'^child_detail/nominal_roll_list/12/$',view=Nominal_roll_list_12.as_view(),name='nominal_roll_list_12'),
+    url(regex=r'^child_detail/nominal_roll_checklist/(?P<pk>\d+?)/$',view=Nominal_roll_checklist.as_view(),name='nominal_roll_check_list'),
 )

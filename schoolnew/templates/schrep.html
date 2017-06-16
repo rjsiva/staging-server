@@ -1,3 +1,4 @@
+
 {% extends "baseapp/master_base_new.html"|pjax:request %}
 
 {% load i18n %}
@@ -7,15 +8,53 @@
 {% block extrahead %} 
 
 <link href="/site_media/static/css/bootstrap.css" rel="stylesheet" type="text/css" />
-
-
+<style type="text/css">
+.table-responsive {
+    width: 100%;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    border: 1px solid #DDD;
+}
+.dataTable th {
+    word-wrap: break-word;
+}
+td, th {
+    border: 1px solid #000;
+}
+th.rank {
+    width: 20px !important;
+}
+th.wider {
+    /*width: 120px !important;*/
+}
+th.rotate {
+    height: 150px;
+    padding: 0px;
+    /*width: 20px !important;*/
+    font-weight: normal;
+    
+}
+.rotate {
+             filter:  progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
+         -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083)"; /* IE8 */
+     -moz-transform: rotate(-90.0deg);  /* FF3.5+ */
+      -ms-transform: rotate(-90.0deg);  /* IE9+ */
+       -o-transform: rotate(-90.0deg);  /* Opera 10.5 */
+  -webkit-transform: rotate(-90.0deg);  /* Safari 3.1+, Chrome */
+          transform: rotate(-90.0deg);  /* Standard */
+}
+</style>
 {% endblock %}
 
 
 
 
 {% block content %}
-{{dept_opt}}
+
+
  <div  class="form-group" style="visibility:hide" id="dept_div" name="dept_div"><b>{% trans "Select Department for the Report:" %}</b><select id="dept_choi" class="form-control" name='dept_choi' onselect="dept_rep();" onchange="dept_rep();" >
             {% if dept_opt == 1 %}
                 <option value = '1' selected="selected" >D.S.E. Report</option>
@@ -27,8 +66,6 @@
                 <option value = '3' selected="selected" >D.M.S. Report</option>
                
             {% else %} 
-
-            {% endif %} 
             {% if dept_opt == 4 %}                        
                 <option value='4' selected="selected">All Directorate Report</option>
             {% else %}
@@ -37,35 +74,39 @@
                 <option value = 'D.E.E. Report' >D.E.E. Report</option>
                 <option value = 'D.M.S. Report' >D.M.S. Report</option>
                 <option value = 'All Directorate Report' >All Directorate Report</option>
-                 {% endif %}                  
+            {% endif %}
+            {% endif %}
             {% endif %}                  
             {% endif %}
        </select></div>
 
- <div id="all_rep" name="all_rep" class="form-group" style="visibility:hide">
+ <div id="all_rep" class='table table-bordered table-striped2' name="all_rep" style="visibility:hide">
 
-<center><h2> School Profile - Entry - Status Report (All Directorate Schools)</h2></center>
+<center><h2> School Profile - Entry - {{rep_h}} Level- Status Report (All Directorate Schools)</h2></center>
 
+<center><h3> District: {{dist_name}} Block:{{blk_name}} </h2></center>
 
-  <table class='table table-bordered table-striped2-header-rotated' border="2" align="center" cellspacing="0">
+  <table class="table" border="2" align="center" cellspacing="0">
  
       <tr>
         <th rowspan="3" style="vertical-align:middle;" class="text-center">SL.NO.</th>
         <th rowspan="3" style="vertical-align:middle;" class="text-center">UDISE CODE</th>
         <th rowspan="3"  style="vertical-align:middle;" class="text-center">NAME OF THE SCHOOL</th>
+        <th rowspan="3"  style="vertical-align:middle;" class="text-center">DIRECTORATE</th>        
+        <th rowspan="3"  style="vertical-align:middle;" class="text-center">MANAGEMENT</th>
         <th colspan="7"  style="vertical-align:middle;" class="text-center">ENTRIES MADE IN </th>
       </tr>
       <tr>  
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Basic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Academic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Infrastructure Information</th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Basic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Academic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Infrastructure Information</div></th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Teaching Post</th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Non-Teaching Post</th>  
         </tr><tr>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Filled</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Filled</div></th>
 </tr>
     {% for i in allsl %}
 <tr>
@@ -78,6 +119,28 @@
 
 <td>     
         {{i.school_name}}
+</td>
+<td>    
+{% if i.chk_dept == 1 %}
+DSE
+{% endif %}
+{% if i.chk_dept == 2 %}
+DEE
+{% endif %}
+{% if i.chk_dept == 3 %}
+DMS
+{% endif %}
+</td> 
+<td>    
+{% if i.chk_manage == 1 %}
+GOVT
+{% endif %}
+{% if i.chk_manage == 2 %}
+AIDED
+{% endif %}
+{% if i.chk_manage == 3 %}
+PRIVATE
+{% endif %}
 </td> 
 <td>
 {% for k in  schbi %}
@@ -140,32 +203,33 @@ Yes
 
 
 </table>
+
 </div>    
 
-<div id="dse_rep" name="dse_rep" class="form-group" style="visibility:hide"> 
+<div id="dse_rep" name="dse_rep" class='table table-bordered table-striped2' style="visibility:hide"> 
 
-<center><h2> School Profile - Entry - Status Report (D.S.E. Schools)</h2></center>
+<center><h2> School Profile - Entry - {{rep_h}} Level- Status Report (D.S.E. Schools)</h2></center>
 
 
-  <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
- 
+  <table class='table table-bordered-striped table-striped2' border="2" align="center" cellspacing="0">
       <tr>
         <th rowspan="3" style="vertical-align:middle;" class="text-center">SL.NO.</th>
         <th rowspan="3" style="vertical-align:middle;" class="text-center">UDISE CODE</th>
         <th rowspan="3"  style="vertical-align:middle;" class="text-center">NAME OF THE SCHOOL</th>
+        <th rowspan="3"  style="vertical-align:middle;" class="text-center">MANAGEMENT</th>        
         <th colspan="7"  style="vertical-align:middle;" class="text-center">ENTRIES MADE IN </th>
       </tr>
       <tr>  
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Basic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Academic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Infrastructure Information</th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Basic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Academic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Infrastructure Information</div></th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Teaching Post</th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Non-Teaching Post</th>  
         </tr><tr>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate" style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Filled</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate"  style="font-size:12px;">No. Post Filled</div></th>
 </tr>
     {% for i in dsesl %}
 <tr>
@@ -178,7 +242,18 @@ Yes
 
 <td>     
         {{i.school_name}}
-</td> 
+</td>
+<td>    
+{% if i.chk_manage == 1 %}
+GOVT
+{% endif %}
+{% if i.chk_manage == 2 %}
+AIDED
+{% endif %}
+{% if i.chk_manage == 3 %}
+PRIVATE
+{% endif %}
+</td>
 <td>
 {% for k in  schbi %}
 {% if k.id == i.id %}
@@ -242,9 +317,9 @@ Yes
 </table>
 </div>
 
-<div id="dee_rep" name="dee_rep" class="form-group" style="visibility:hide"> 
+<div id="dee_rep" name="dee_rep" class='table table-bordered table-striped2' style="visibility:hide"> 
 
-<center><h2> School Profile - Entry - Status Report (D.E.E. Schools)</h2></center>
+<center><h2> School Profile - Entry - {{rep_h}} Level- Status Report (D.E.E. Schools)</h2></center>
 
 
   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
@@ -253,19 +328,20 @@ Yes
         <th rowspan="3" style="vertical-align:middle;" class="text-center">SL.NO.</th>
         <th rowspan="3" style="vertical-align:middle;" class="text-center">UDISE CODE</th>
         <th rowspan="3"  style="vertical-align:middle;" class="text-center">NAME OF THE SCHOOL</th>
+        <th rowspan="3"  style="vertical-align:middle;" class="text-center">MANAGEMENT</th>        
         <th colspan="7"  style="vertical-align:middle;" class="text-center">ENTRIES MADE IN </th>
       </tr>
       <tr>  
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Basic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Academic Information</th>
-        <th style="vertical-align:middle;" rowspan="2" class="text-center">Infrastructure Information</th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Basic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Academic Information</div></th>
+        <th style="vertical-align:middle;" rowspan="2" class="text-center"><div class="rotate">Infrastructure Information</div></th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Teaching Post</th>
         <th style="vertical-align:middle;" colspan="2" class="text-center">Non-Teaching Post</th>  
         </tr><tr>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Sanctioned</th>
-        <th style="vertical-align:middle;" class="text-center">No. Post Filled</th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate" style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate" style="font-size:12px;">No. Post Filled</div></th>
+        <th style="vertical-align:middle;" class="text-center"><div class="rotate" style="font-size:12px;">No. Post Sanctioned</div></th>
+        <th style="vertical-align:middle;" class="text-center" ><div class="rotate" style="font-size:12px;">No. Post Filled</div></th>
 </tr>
     {% for i in deesl %}
 <tr>
@@ -278,6 +354,17 @@ Yes
 
 <td>     
         {{i.school_name}}
+</td>
+<td>    
+{% if i.chk_manage == 1 %}
+GOVT
+{% endif %}
+{% if i.chk_manage == 2 %}
+AIDED
+{% endif %}
+{% if i.chk_manage == 3 %}
+PRIVATE
+{% endif %}
 </td> 
 <td>
 {% for k in  schbi %}
@@ -342,9 +429,9 @@ Yes
 </table>
 </div>
 
- <div id="dms_rep" name="dms_rep" class="form-group" style="visibility:hide">
+ <div id="dms_rep" name="dms_rep" class='table table-bordered table-striped2' style="visibility:hide">
 
-<center><h2> School Profile - Entry - Status Report (Matriculation Schools)</h2></center>
+<center><h2> School Profile - Entry - {{rep_h}} Level- Status Report (Matriculation Schools)</h2></center>
 
 
   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
@@ -353,12 +440,13 @@ Yes
         <th width=5% rowspan="2" style="vertical-align:middle;" class="text-center">SL.NO.</th>
         <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">UDISE CODE</th>
         <th width=5% rowspan="2"  style="vertical-align:middle;" class="text-center">NAME OF THE SCHOOL</th>
+        <th rowspan="2"  style="vertical-align:middle;" class="text-center">MANAGEMENT</th>        
         <th width=5% colspan="5"  style="vertical-align:middle;" class="text-center">ENTRIES MADE IN </th>
       </tr>
       <tr>  
-        <th width=5% style="vertical-align:middle;" class="text-center">Basic Information</th>
-        <th width=5% style="vertical-align:middle;" class="text-center">Academic Information</th>
-        <th width=5% style="vertical-align:middle;" class="text-center">Infrastructure Information</th>
+        <th width=5% style="vertical-align:middle;" class="text-center"><div>Basic Information</div></th>
+        <th width=5% style="vertical-align:middle;" class="text-center"><div>Academic Information</div></th>
+        <th width=5% style="vertical-align:middle;" class="text-center"><div>Infrastructure Information</div></th>
 
 </tr>
      {% for i in dmssl %}
@@ -372,6 +460,17 @@ Yes
 
 <td>     
         {{i.school_name}}
+</td>
+<td>    
+{% if i.chk_manage == 1 %}
+GOVT
+{% endif %}
+{% if i.chk_manage == 2 %}
+AIDED
+{% endif %}
+{% if i.chk_manage == 3 %}
+PRIVATE
+{% endif %}
 </td> 
 <td>
 {% for k in  schbi %}
@@ -408,7 +507,7 @@ Yes
 </table>
 </div> 
 <center>
-<a  class="btn btn-large btn-info" href='/schoolnew/sch_dist_repbi/{{blkid.district1}}/{{dept_opt}}'>Back</a>
+<a  class="btn btn-large btn-info" href='/schoolnew/sch_dist_repbi/{{b_id}}/{{dept_opt}}/2/'>Back</a>
 </center>
 
 <script type="text/javascript">

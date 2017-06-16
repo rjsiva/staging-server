@@ -226,7 +226,7 @@ class Teacher_detail(caching.base.CachingMixin, models.Model):
     ofs_reason=models.CharField(max_length=25,default="None",blank=True,null=True)
     ofs_date=models.DateField(blank=True,null=True)
     super_annum_flag=models.BooleanField(default=False)
-
+    staff_table_id=models.PositiveIntegerField(blank=True,null=True)
     transfer_flag=models.CharField(max_length=3,default='No')
     timestamp = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     
@@ -455,6 +455,7 @@ class completed_table(models.Model):
     Teacher_result=models.CharField(max_length=2,default=0)
     Teacher_award=models.CharField(max_length=2,default=0)
     ofs_flag=models.BooleanField(default=False) 
+    transfer_flag=models.BooleanField(default=False) 
     
     def __unicode__(self):
         return u'%d%d%s%s%s' % (self.id,self.teacherid_id,self.Teacher_edu,self.Teacher_regularisation,self.Teacher_posting)

@@ -180,11 +180,11 @@ LEAVE SURRENDER ENTRY</h6></center>
         <td>{{forloop.counter}}</td>  
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none">{{ staff_name }} </td> 
 
-        <td> {{ i.surrender_date }}</td> 
+        <td> {{ i.surrender_date  |date:"d-m-Y"}}</td> 
         <td> {{ i.current_balance_days }}</td> 
         <td> {{ i.no_of_days }}</td> 
         <td> {{ i.order_no }}</td> 
-        <td> {{ i.order_date }}</td> 
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td> 
 
         <td><a href="/teachers/teacher_leave_surrender_delete/{{i.id}}"><button type="button" class="btn btn-danger">Delete</button></a></td> 
         {% endfor %} 

@@ -30,6 +30,7 @@ import os
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.core.cache import cache
+from emis_account.models import Account
 
 class myview1(View):
 
@@ -125,16 +126,23 @@ class home_page(View):
 				else:
 					govaid_ent=''
 
+				
+				if (str(govchk)=='Un-Aided (Private) School - Other than State Board School'):
+					cbsechk="Yes"
+				else:
+					cbsechk=""
+
 				if (Academicinfo.objects.filter(school_key=basic_det.id).count())>0:
 					acade_det = Academicinfo.objects.get(school_key=basic_det.id)
 					acade_det = Academicinfo.objects.get(id=acade_det.id)
 					if basic_det.sch_cate:
-						if (basic_det.sch_cate.category_code in ('3,5,6,7,8,10,11')):
+						if (int(basic_det.sch_cate.category_code) in (3,5,6,7,8,10,11)):
 							pass_ent='Yes'
 						else:
 							pass_ent=''
 					else:
 						pass_ent=''
+
 
 				if (Infradet.objects.filter(school_key=basic_det.id).count())>0:
 					infra_det = Infradet.objects.get(school_key=basic_det.id)				
@@ -162,7 +170,6 @@ class home_page(View):
 				basic_mdate=basic_det.modified_date.strftime('%d-%m-%Y --  %H:%M %p')
 				grp=basic_det.sch_cate
 				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Matriculation Hr.Sec School (I-XII)')):
-					
 					grp_chk='Yes'
 				else:
 					grp_chk=''		
@@ -225,6 +232,7 @@ class basic_edit(UpdateView):
 				corpn_zone = instance.corpn_zone
 				corpn_ward = instance.corpn_ward
 				edu_district = instance.edu_district
+				edu_dist_id = instance.edu_dist_id
 				address  = instance.address
 				stdcode = instance.stdcode
 				landline = instance.landline
@@ -295,7 +303,9 @@ class basic_edit(UpdateView):
 					basic_editsave.block = form.cleaned_data['block']
 					basic_editsave.block1 = form.cleaned_data['block']
 					basic_editsave.local_body_type= form.cleaned_data['local_body_type']
-					chk_local_body=Local_body.objects.get(id=request.POST['local_body_type'])			
+					chk_local_body=Local_body.objects.get(id=request.POST['local_body_type'])
+					edist_id=Edn_dist_block.objects.get(id=request.POST['edu_district'])	
+
 					if str(chk_local_body)=='Village Panchayat':	
 						basic_editsave.village_panchayat =form.cleaned_data['village_panchayat']
 						basic_editsave.vill_habitation = form.cleaned_data['vill_habitation']
@@ -391,6 +401,7 @@ class basic_edit(UpdateView):
 						else:
 							basic_editsave.kgsec = 'No'
 					basic_editsave.edu_district = form.cleaned_data['edu_district']
+					basic_editsave.edu_dist_id = edist_id.edn_dist_id
 					basic_editsave.address  = form.cleaned_data['address']
 					basic_editsave.pincode = form.cleaned_data['pincode']
 					basic_editsave.stdcode = form.cleaned_data['stdcode']
@@ -501,8 +512,8 @@ class basic_edit(UpdateView):
 
 			else:
 				form = BasicForm(request.POST,request.FILES)
-				if form.is_valid():
-
+				if form.is_valid():			
+					edist_id=Edn_dist_block.objects.get(id=form.cleaned_data['edu_district'])
 					basicinfo = Basicinfo(
 						school_id=form.cleaned_data['school_id'],
 						school_name = form.cleaned_data['school_name'].upper(),
@@ -525,6 +536,7 @@ class basic_edit(UpdateView):
 						corpn_zone = form.cleaned_data['corpn_zone'],
 						corpn_ward = form.cleaned_data['corpn_ward'],
 						edu_district = form.cleaned_data['edu_district'],
+						edu_dist_id = edist_id.edn_dist_id,
 						address  = form.cleaned_data['address'],
 						pincode = form.cleaned_data['pincode'],
 						stdcode = form.cleaned_data['stdcode'],
@@ -562,6 +574,27 @@ class basic_edit(UpdateView):
 					)
 					basicinfo.save()
 
+					basic_editsave=Basicinfo.objects.get(udise_code=request.user.username)	
+					if basic_editsave.manage_cate_id==1:
+						basic_editsave.chk_manage=1
+					elif basic_editsave.manage_cate_id==2:
+						basic_editsave.chk_manage=2
+					else:
+						basic_editsave.chk_manage=3
+
+					if basic_editsave.sch_directorate_id==28:
+						basic_editsave.chk_dept=3
+					elif basic_editsave.sch_directorate_id in (2,3,16,18,27,29,32,34,42):
+						basic_editsave.chk_dept=2
+					else:
+
+						if basic_editsave.sch_cate.category_code in ('1','2','4'):
+							basic_editsave.chk_dept=2
+						elif basic_editsave.sch_cate.category_code in ('10','11','5','7','8'):
+							basic_editsave.chk_dept=1
+						else:
+							basic_editsave.chk_dept=3					
+					basic_editsave.save()
 					messages.success(request,'Basic Informations Added Successfully')
 					return HttpResponseRedirect('/schoolnew/school_registration')
 				else:
@@ -589,7 +622,8 @@ class admin_edit(View):
 				else:
 					govaid_chk=''
 				grp=basic_det.sch_cate
-				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Matriculation Hr.Sec School (I-XII)')):
+				
+				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Matriculation Hr.Sec School (I-XII)')):	
 					grp_chk='Yes'
 				else:
 					grp_chk=''		
@@ -733,7 +767,7 @@ class admin_edit(View):
 				smc_smdc = instance.smc_smdc
 				noof_med=instance.noof_med	
 				dge_no_ten= instance.dge_no_ten	
-				dge_no_twelve= instance.dge_no_twelve			
+				# dge_no_twelve= instance.dge_no_twelve			
 
 				return render (request,'admin_edit_new.html',locals())
 			else:
@@ -791,7 +825,7 @@ class admin_edit(View):
 					academic_edit.kan_med = form.cleaned_data['kan_med']
 					academic_edit.urdu_med = form.cleaned_data['urdu_med']
 
-					if request.POST['oth_med']== 'Yes':
+					if form.cleaned_data['oth_med']== 'Yes':
 						academic_edit.oth_med = True
 						academic_edit.other_med = form.cleaned_data['other_med']
 					else:
@@ -827,7 +861,7 @@ class admin_edit(View):
 					academic_edit.low_class = form.cleaned_data['low_class']
 					academic_edit.high_class = form.cleaned_data['high_class']
 
-					if (request.POST['high_class'] == 'XII Std'):
+					if (form.cleaned_data['high_class'] == 'XII Std'):
 						academic_edit.hssstart_order = form.cleaned_data['hssstart_order']
 						academic_edit.hssrecog_typ = form.cleaned_data['hssrecog_typ']
 						academic_edit.hssrecog_ord = form.cleaned_data['hssrecog_ord']
@@ -839,13 +873,13 @@ class admin_edit(View):
 					academic_edit.upgr_det = form.cleaned_data['upgr_det']
 					academic_edit.other_board_aff = form.cleaned_data['other_board_aff']
 
-					if request.POST['spl_school']== 'True':
+					if form.cleaned_data['spl_school']== 'True':
 						academic_edit.spl_school = True
 						academic_edit.spl_type = form.cleaned_data['spl_type']
 					else:
 						academic_edit.spl_school = False
 						academic_edit.spl_type = ''
-					if request.POST['boarding']== 'True':
+					if form.cleaned_data['boarding']== 'True':
 						academic_edit.boarding = True
 						academic_edit.hostel_floor = form.cleaned_data['hostel_floor']
 						academic_edit.hostel_rooms = form.cleaned_data['hostel_rooms']
@@ -870,7 +904,7 @@ class admin_edit(View):
 					academic_edit.smc_smdc = form.cleaned_data['smc_smdc']
 					academic_edit.noof_med=form.cleaned_data['noof_med']
 					academic_edit.dge_no_ten=form.cleaned_data['dge_no_ten']
-					academic_edit.dge_no_twelve=form.cleaned_data['dge_no_twelve']
+
 					if form.cleaned_data['nrstc']== True:
 						academic_edit.nrstc = True
 					else:
@@ -889,31 +923,31 @@ class admin_edit(View):
 				if form.is_valid():
 
 					sch_key=form.cleaned_data['school_key']
-					if request.POST['min_dt_iss']:
+					if form.cleaned_data['min_dt_iss']:
 						chk_dtiss=form.cleaned_data['min_dt_iss']
 					else:
 						chk_dtiss=None
-					if request.POST['recog_dt_fm']:
+					if form.cleaned_data['recog_dt_fm']:
 						chk_recfmdt=form.cleaned_data['recog_dt_fm']
 					else:
 						chk_recfmdt=None
-					if request.POST['recog_dt_to']:
+					if form.cleaned_data['recog_dt_to']:
 						chk_rectodt=form.cleaned_data['recog_dt_to']
 					else:
 						chk_rectodt=None
 					if request.POST['gov_chk']=='No':
-						if request.POST['hssrecog_dt_fm']:
+						if form.cleaned_data['hssrecog_dt_fm']:
 							chk_hssrecfmdt=form.cleaned_data['hssrecog_dt_fm']
 						else:
 							chk_hssrecfmdt=None
-						if request.POST['hssrecog_dt_to']:
+						if form.cleaned_data['hssrecog_dt_to']:
 							chk_hssrectodt=form.cleaned_data['hssrecog_dt_to']
 						else:
 							chk_hssrectodt=None
 					else:
 						chk_hssrecfmdt=None
 						chk_hssrectodt=None
-					if request.POST['boarding'] == 'True':
+					if form.cleaned_data['boarding'] == 'True':
 						boarding_chk=True
 					else:
 						boarding_chk=False
@@ -932,12 +966,21 @@ class admin_edit(View):
 					else:
 						oth_med=False	
 
-					if (request.POST['high_class'] == 'XII Std'):
-						thssstart_order = request.POST['hssstart_order'],
-						thssstart_yr = request.POST['hssstart_yr'],
-						thssrecog_typ = request.POST['hssrecog_typ'],
-						thssrecog_ord = request.POST['hssrecog_ord'],
-						thssboard = request.POST['hssboard'],
+					if (form.cleaned_data['high_class'] == 'XII Std'):
+						thssstart_order = form.cleaned_data['hssstart_order'],
+						thssstart_yr = form.cleaned_data['hssstart_yr'],
+						if request.POST['gov_chk']=='Yes':
+							thssrecog_typ = None,
+							thssrecog_ord = None,
+							thssboard = None,							
+						else:					
+							thssrecog_typ = request.POST['hssrecog_typ']
+							thssrecog_ord = request.POST['hssrecog_ord']
+
+							if form.cleaned_data['board']== 'State Board':
+								thssboard='State Board'
+							else:
+								thssboard = request.POST['hssboard']
 					else:
 						thssstart_order = ''
 						thssstart_yr = ''
@@ -999,7 +1042,7 @@ class admin_edit(View):
 					smc_smdc = form.cleaned_data['smc_smdc'],
 					noof_med = form.cleaned_data['noof_med'],
 					dge_no_ten= form.cleaned_data['dge_no_ten'],
-					dge_no_twelve= form.cleaned_data['dge_no_twelve'],				
+					# dge_no_twelve= form.cleaned_data['dge_no_twelve'],				
 					
 					)
 					academicinfo.save()
@@ -1178,7 +1221,7 @@ class infra_edit(View):
 				else:
 					gov_chk='No'				
 					
-				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Middle School (I-VIII)')|(str(grp)=='Middle School (VI-VIII)')|(str(grp)=='High Schools (I-X)')|(str(grp)=='High Schools (VI-X)')|(str(grp)=='High Schools (IX-X)')|(str(grp)=='KGBV')):
+				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Matriculation Hr.Sec School (I-XII)')|(str(grp)=='Middle School (I-VIII)')|(str(grp)=='Middle School (VI-VIII)')|(str(grp)=='High Schools (I-X)')|(str(grp)=='High Schools (VI-X)')|(str(grp)=='High Schools (IX-X)')|(str(grp)=='KGBV')|(str(grp)=='Matriculation School (I-VIII)')|(str(grp)=='Matriculation School (I-X)')):
 					if acade_det.schooltype<>'Boys':
 						inci_chk='Yes'
 					else:
@@ -1198,7 +1241,7 @@ class infra_edit(View):
 				else:
 					govaid_chk=''
 					
-				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Middle School (I-VIII)')|(str(grp)=='Middle School (VI-VIII)')|(str(grp)=='High Schools (I-X)')|(str(grp)=='High Schools (VI-X)')|(str(grp)=='High Schools (IX-X)')|(str(grp)=='KGBV')):
+				if ((str(grp)=='Hr.Sec School (I-XII)')|(str(grp)=='Hr.Sec School (VI-XII)')|(str(grp)=='Hr.Sec School (IX-XII)')|(str(grp)=='Hr.Sec School (XI-XII)')|(str(grp)=='Matriculation Hr.Sec School (I-XII)')|(str(grp)=='Middle School (I-VIII)')|(str(grp)=='Middle School (VI-VIII)')|(str(grp)=='High Schools (I-X)')|(str(grp)=='High Schools (VI-X)')|(str(grp)=='High Schools (IX-X)')|(str(grp)=='KGBV')|(str(grp)=='Matriculation School (I-VIII)')|(str(grp)=='Matriculation School (I-X)')):
 					if acade_det.schooltype<>'Boys':
 						inci_chk='Yes'
 					else:
@@ -2462,7 +2505,7 @@ class Buildabs_edit(View):
 						stair_case_width = form.cleaned_data['stair_case_width'],
 						building_funded = form.cleaned_data['building_funded'],
 						stab_cer_no = form.cleaned_data['stab_cer_no'],	
-						stab_cer_date = form.cleaned_data['stab_cer_date'],
+						stab_cer_dt = form.cleaned_data['stab_cer_dt'],
 						stab_fm_dt = form.cleaned_data['stab_fm_dt'],
 						stab_to_dt = form.cleaned_data['stab_to_dt'],
 						stab_iss_auth = form.cleaned_data['stab_iss_auth'],
@@ -2509,7 +2552,7 @@ class Buildabs_update(View):
 			stair_case_width = instance.stair_case_width
 			building_funded = instance.building_funded
 			stab_cer_no = instance.stab_cer_no
-			stab_cer_date= instance.stab_cer_date
+			stab_cer_dt= instance.stab_cer_dt
 			stab_fm_dt=instance.stab_fm_dt
 			stab_to_dt=instance.stab_to_dt
 			stab_iss_auth=instance.stab_iss_auth
@@ -2527,8 +2570,8 @@ class Buildabs_update(View):
 			build_cons_yr=instance.build_cons_yr
 			build_pres_cond = instance.build_pres_cond
 			build_cons_yr = instance.build_cons_yr		
-			if Build_sta_dt.stability_cer_date:
-				stab_dt=Build_sta_dt.stability_cer_date.strftime('%Y-%m-%d')
+			if Build_sta_dt.stab_cer_dt:
+				stab_dt=Build_sta_dt.stab_cer_dt.strftime('%Y-%m-%d')
 
 			return render (request,'buildabs_edit_upd.html',locals())
 		else:
@@ -2560,7 +2603,7 @@ class Buildabs_update(View):
 					newbuildabs.stair_case_width = form.cleaned_data['stair_case_width']
 					newbuildabs.building_funded = form.cleaned_data['building_funded']
 					newbuildabs.stab_cer_no = form.cleaned_data['stab_cer_no']	
-					newbuildabs.stab_cer_date= form.cleaned_data['stab_cer_date']
+					newbuildabs.stab_cer_dt= form.cleaned_data['stab_cer_dt']
 					newbuildabs.stab_fm_dt= form.cleaned_data['stab_fm_dt']
 					newbuildabs.stab_to_dt= form.cleaned_data['stab_to_dt']
 					newbuildabs.stab_iss_auth= form.cleaned_data['stab_iss_auth']
@@ -3103,6 +3146,19 @@ class Passpercent_edit(View):
 			sch_key = basic_det.id
 			form=pass_form()
 			acade_det = Academicinfo.objects.get(school_key=basic_det.id)
+			if basic_det.sch_cate:
+				if (int(basic_det.sch_cate.category_code) in (3,5,10,11)):
+					pass_hr='Yes'
+				else:
+					if (int(basic_det.sch_cate.category_code) in (6,7,8)):
+						pass_hs='Yes'
+					else:
+						pass_hr=''
+						pass_hs=''
+			else:
+				pass_hr=''
+				pass_hs=''
+									
 			return render (request,'pass_edit_upd.html',locals())
 		else:
 			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))			
@@ -3188,7 +3244,19 @@ class Passpercent_update(View):
 			twelve_b_per= instance.twelve_b_per
 			twelve_g_per= instance.twelve_g_per
 			twelve_a_per= instance.twelve_a_per
-			acade_det = Academicinfo.objects.get(school_key=basic_det.id)			
+			acade_det = Academicinfo.objects.get(school_key=basic_det.id)
+			if basic_det.sch_cate:
+				if (int(basic_det.sch_cate.category_code) in (3,5,10,11)):
+					pass_hr='Yes'
+				else:
+					if (int(basic_det.sch_cate.category_code) in (6,7,8)):
+						pass_hs='Yes'
+					else:
+						pass_hr=''
+						pass_hs=''
+			else:
+				pass_hr=''
+				pass_hs=''					
 			return render (request,'pass_edit_upd.html',locals())
 		else:
 			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))			
@@ -3669,112 +3737,246 @@ class Offnonteaching_delete(View):
 	
 
 
+class Edn_dist_abs(View):
+
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if request.user.account.user_category_id==26:	
+				edist_lst=Edn_dist_block.objects.filter(edn_dist_id=request.user.account.associated_with)
+
+				deptlst=Manage_cate.objects.all().order_by('id')
+				totsch=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with,chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(schmantot=Count('chk_dept'))
+				totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).count()
+
+				bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(bimantot=Count('chk_dept'))
+				bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).count()
+
+				aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
+				aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
+				aigrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('academicinfo__school_key').count()
+
+				iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
+				iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
+				iigrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('infradet__school_key').count()
+
+				cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
+				csgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('class_section__school_key').distinct().count()
+
+				tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				tpgrtot=Basicinfo.objects.filter(staff__staff_cat='1',edu_dist_id=request.user.account.associated_with).values('staff__post_sanc').aggregate(Sum('staff__post_sanc'))
+				
+				tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				tpfgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with,staff__staff_cat='1',staff__post_filled__gt='0').values('staff__post_filled').aggregate(Sum('staff__post_filled'))
+
+				ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2',edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				ntpgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+
+				ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0',edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				ntpfgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with,staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+
+				ldtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(ld_schtot=Count('chk_dept'),ld_schcoun=Count('land__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ldstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(ld_subtot=Count('land__school_key',distinct = True)).order_by('chk_dept')
+				ldgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('land__school_key').distinct().count()
+
+				bdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(bd_schtot=Count('chk_dept'),bd_schcoun=Count('building__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				bdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(bd_subtot=Count('building__school_key',distinct = True)).order_by('chk_dept')
+				bdgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('building__school_key').distinct().count()
+
+				badtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(bad_schtot=Count('chk_dept'),bad_schcoun=Count('building_abs__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				badstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(bad_subtot=Count('building_abs__school_key',distinct = True)).order_by('chk_dept')
+				badgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('building_abs__school_key').distinct().count()
+
+				sdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(sd_schtot=Count('chk_dept'),sd_schcoun=Count('sports__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				sdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(sd_subtot=Count('sports__school_key',distinct = True)).order_by('chk_dept')
+				sdgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('sports__school_key').distinct().count()
+
+				icttotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(ict_schtot=Count('chk_dept'),ict_schcoun=Count('ictentry__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ictstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(ict_subtot=Count('ictentry__school_key',distinct = True)).order_by('chk_dept')
+				ictgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('ictentry__school_key').distinct().count()
+
+				ppdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_manage','chk_dept').annotate(ppd_schtot=Count('chk_dept'),ppd_schcoun=Count('passpercent__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ppdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],edu_dist_id=request.user.account.associated_with).values('chk_dept').annotate(ppd_subtot=Count('passpercent__school_key',distinct = True)).order_by('chk_dept')
+				ppdgrtot=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with).values('passpercent__school_key').distinct().count()
+
+				return render(request,'edist_abs.html',locals())	
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+	
+
 
 class Sch_Blk_abs(View):
-	
+
 	def get(self,request,**kwargs):
-		blk_id=self.kwargs['pk']
-		deptlst=Manage_cate.objects.all().order_by('id')
+		if request.user.is_authenticated():
+			if request.user.account.user_category_id!=1:
+				if self.kwargs.get('pk'):
+					# 				if (self.kwargs.get('code')):
+					# dept_opt=int(self.kwargs.get('code'))
+					blk_id=int(self.kwargs.get('pk'))
+				else:
+					block_chk=Account.objects.get(user_id=self.request.user.id)
+					blk_id=block_chk.associated_with
+				print 'block id'
+				print blk_id
+				deptlst=Manage_cate.objects.all().order_by('id')
 
-		# blkid=Basicinfo.objects.get(udise_code=int(request.user.username))
+				# blkid=Basicinfo.objects.get(udise_code=int(request.user.username))
 
-		totsch=Basicinfo.objects.filter(block1=blk_id,chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				totsch=Basicinfo.objects.filter(block1=blk_id,chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
 
-		totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],block1=blk_id).values('chk_dept').annotate(schmantot=Count('chk_dept'))
-		totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],block1=blk_id).count()
+				totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],block1=blk_id).values('chk_dept').annotate(schmantot=Count('chk_dept'))
+				totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],block1=blk_id).count()
 
+				bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(bimantot=Count('chk_dept'))
+				bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],block_id=blk_id).count()
 
-		bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
-		bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(bimantot=Count('chk_dept'))
-		bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],block_id=blk_id).count()
-		aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
-		aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
-		aigrtot=Basicinfo.objects.filter(block_id=blk_id).values('academicinfo__school_key').count()
+				aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
+				aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
+				aigrtot=Basicinfo.objects.filter(block_id=blk_id).values('academicinfo__school_key').count()
 
-		iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
-		iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
-		iigrtot=Basicinfo.objects.filter(block_id=blk_id).values('infradet__school_key').count()
+				iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
+				iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
+				iigrtot=Basicinfo.objects.filter(block_id=blk_id).values('infradet__school_key').count()
 
-		cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
-		csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
-		csgrtot=Basicinfo.objects.filter(block_id=blk_id).values('class_section__school_key').distinct().count()
+				cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
+				csgrtot=Basicinfo.objects.filter(block_id=blk_id).values('class_section__school_key').distinct().count()
 
-		tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',block_id=blk_id).values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',block_id=blk_id).values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		tpgrtot=Basicinfo.objects.filter(staff__staff_cat='1',block_id=blk_id).values('staff__post_sanc').aggregate(Sum('staff__post_sanc'))
-		
-		tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',block_id=blk_id).values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',block_id=blk_id).values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		tpfgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='1',staff__post_filled__gt='0').values('staff__post_filled').aggregate(Sum('staff__post_filled'))
+				tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',block_id=blk_id).values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',block_id=blk_id).values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				tpgrtot=Basicinfo.objects.filter(staff__staff_cat='1',block_id=blk_id).values('staff__post_sanc').aggregate(Sum('staff__post_sanc'))
+				
+				tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',block_id=blk_id).values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',block_id=blk_id).values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				tpfgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='1',staff__post_filled__gt='0').values('staff__post_filled').aggregate(Sum('staff__post_filled'))
 
-		# ntptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3,manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2',block_id=blk_id).values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',block_id=blk_id).values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		# ntpgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2').values('staff__post_sanc').annotate(Sum('staff__post_sanc'))	
-		# ntpgrtot=Staff.objects.filter(staff_cat='2',block_id=blk_id).aggregate(Sum('post_sanc'))
-		ntpgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2',block_id=blk_id).values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',block_id=blk_id).values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				ntpgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
 
-		# ntpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Count('staff')).order_by('chk_dept','chk_manage')
-		ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0',block_id=blk_id).values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',block_id=blk_id).values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		# ntpfgrtot=Staff.objects.filter(staff_cat='2',post_filled__gt='0',block_id=blk_id).aggregate(Sum('post_filled'))
-		ntpfgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0',block_id=blk_id).values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',block_id=blk_id).values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				ntpfgrtot=Basicinfo.objects.filter(block_id=blk_id,staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		return render(request,'block_abs.html',locals())
+				ldtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(ld_schtot=Count('chk_dept'),ld_schcoun=Count('land__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ldstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(ld_subtot=Count('land__school_key',distinct = True)).order_by('chk_dept')
+				ldgrtot=Basicinfo.objects.filter(block_id=blk_id).values('land__school_key').distinct().count()
+
+				bdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bd_schtot=Count('chk_dept'),bd_schcoun=Count('building__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				bdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(bd_subtot=Count('building__school_key',distinct = True)).order_by('chk_dept')
+				bdgrtot=Basicinfo.objects.filter(block_id=blk_id).values('building__school_key').distinct().count()
+
+				badtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(bad_schtot=Count('chk_dept'),bad_schcoun=Count('building_abs__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				badstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(bad_subtot=Count('building_abs__school_key',distinct = True)).order_by('chk_dept')
+				badgrtot=Basicinfo.objects.filter(block_id=blk_id).values('building_abs__school_key').distinct().count()
+
+				sdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(sd_schtot=Count('chk_dept'),sd_schcoun=Count('sports__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				sdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(sd_subtot=Count('sports__school_key',distinct = True)).order_by('chk_dept')
+				sdgrtot=Basicinfo.objects.filter(block_id=blk_id).values('sports__school_key').distinct().count()
+
+				icttotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(ict_schtot=Count('chk_dept'),ict_schcoun=Count('ictentry__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ictstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(ict_subtot=Count('ictentry__school_key',distinct = True)).order_by('chk_dept')
+				ictgrtot=Basicinfo.objects.filter(block_id=blk_id).values('ictentry__school_key').distinct().count()
+
+				ppdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],block_id=blk_id).values('chk_manage','chk_dept').annotate(ppd_schtot=Count('chk_dept'),ppd_schcoun=Count('passpercent__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ppdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block_id=blk_id).values('chk_dept').annotate(ppd_subtot=Count('passpercent__school_key',distinct = True)).order_by('chk_dept')
+				ppdgrtot=Basicinfo.objects.filter(block_id=blk_id).values('passpercent__school_key').distinct().count()
+
+				return render(request,'block_abs.html',locals())	
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+	
 
 
 
 class Sch_Dist_abs(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['pk']
-		deptlst=Manage_cate.objects.all().order_by('id')
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1)|(request.user.account.user_category_id!=2)|(request.user.account.user_category_id!=18):
+				dist_id=Account.objects.get(user_id=self.request.user.id)
+				deptlst=Manage_cate.objects.all().order_by('id')
 
-		blkid=Basicinfo.objects.get(udise_code=int(request.user.username))
+				totsch=Basicinfo.objects.filter(district=dist_id.associated_with,chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],district=dist_id.associated_with).values('chk_dept').annotate(schmantot=Count('chk_dept'))
+				totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],district=dist_id.associated_with).count()
 
-		totsch=Basicinfo.objects.filter(district1=d_id,chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(bimantot=Count('chk_dept'))
+				bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).count()
 
-		totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],district1=d_id).values('chk_dept').annotate(schmantot=Count('chk_dept'))
-		totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],district1=d_id).count()
+				aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
+				aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
+				aigrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('academicinfo__school_key').count()
 
+				iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
+				iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
+				iigrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('infradet__school_key').count()
 
-		bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=d_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
-		bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=d_id).values('chk_dept').annotate(bimantot=Count('chk_dept'))
-		bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district_id=d_id).count()
-		aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=d_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
-		aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=d_id).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
-		aigrtot=Basicinfo.objects.filter(district_id=d_id).values('academicinfo__school_key').count()
+				cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
+				csgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('class_section__school_key').distinct().count()
 
-		iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=d_id).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
-		iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=d_id).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
-		iigrtot=Basicinfo.objects.filter(district_id=d_id).values('infradet__school_key').count()
+				tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',district_id=dist_id.associated_with).values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				tpgrtot=Basicinfo.objects.filter(staff__staff_cat='1',district_id=dist_id.associated_with).values('staff__post_sanc').aggregate(Sum('staff__post_sanc'))
+				
+				tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district_id=dist_id.associated_with).values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				tpfgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with,staff__staff_cat='1',staff__post_filled__gt='0').values('staff__post_filled').aggregate(Sum('staff__post_filled'))
 
-		cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=d_id).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
-		csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=d_id).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
-		csgrtot=Basicinfo.objects.filter(district_id=d_id).values('class_section__school_key').distinct().count()
+				ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2',district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',district_id=dist_id.associated_with).values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				ntpgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
 
-		tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',district_id=d_id).values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',district_id=d_id).values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		tpgrtot=Basicinfo.objects.filter(staff__staff_cat='1',district_id=d_id).values('staff__post_sanc').aggregate(Sum('staff__post_sanc'))
-		
-		tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district_id=d_id).values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district_id=d_id).values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		tpfgrtot=Basicinfo.objects.filter(district_id=d_id,staff__staff_cat='1',staff__post_filled__gt='0').values('staff__post_filled').aggregate(Sum('staff__post_filled'))
+				ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0',district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district_id=dist_id.associated_with).values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				ntpfgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with,staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		# ntptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3,manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2',district_id=d_id).values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',district_id=d_id).values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		# ntpgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2').values('staff__post_sanc').annotate(Sum('staff__post_sanc'))	
-		# ntpgrtot=Staff.objects.filter(staff_cat='2',district_id=d_id).aggregate(Sum('post_sanc'))
-		ntpgrtot=Basicinfo.objects.filter(district_id=d_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				ldtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(ld_schtot=Count('chk_dept'),ld_schcoun=Count('land__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ldstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(ld_subtot=Count('land__school_key',distinct = True)).order_by('chk_dept')
+				ldgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('land__school_key').distinct().count()
 
-		# ntpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Count('staff')).order_by('chk_dept','chk_manage')
-		ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0',district_id=d_id).values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district_id=d_id).values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		# ntpfgrtot=Staff.objects.filter(staff_cat='2',post_filled__gt='0',district_id=d_id).aggregate(Sum('post_filled'))
-		ntpfgrtot=Basicinfo.objects.filter(district_id=d_id,staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				bdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(bd_schtot=Count('chk_dept'),bd_schcoun=Count('building__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				bdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(bd_subtot=Count('building__school_key',distinct = True)).order_by('chk_dept')
+				bdgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('building__school_key').distinct().count()
 
-		return render(request,'dist_abs.html',locals())
+				badtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(bad_schtot=Count('chk_dept'),bad_schcoun=Count('building_abs__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				badstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(bad_subtot=Count('building_abs__school_key',distinct = True)).order_by('chk_dept')
+				badgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('building_abs__school_key').distinct().count()
+
+				sdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(sd_schtot=Count('chk_dept'),sd_schcoun=Count('sports__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				sdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(sd_subtot=Count('sports__school_key',distinct = True)).order_by('chk_dept')
+				sdgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('sports__school_key').distinct().count()
+
+				icttotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(ict_schtot=Count('chk_dept'),ict_schcoun=Count('ictentry__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ictstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(ict_subtot=Count('ictentry__school_key',distinct = True)).order_by('chk_dept')
+				ictgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('ictentry__school_key').distinct().count()
+
+				ppdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],district_id=dist_id.associated_with).values('chk_manage','chk_dept').annotate(ppd_schtot=Count('chk_dept'),ppd_schcoun=Count('passpercent__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ppdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district_id=dist_id.associated_with).values('chk_dept').annotate(ppd_subtot=Count('passpercent__school_key',distinct = True)).order_by('chk_dept')
+				ppdgrtot=Basicinfo.objects.filter(district_id=dist_id.associated_with).values('passpercent__school_key').distinct().count()
+
+				return render(request,'dist_abs.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 
 
@@ -3782,530 +3984,1583 @@ class Sch_Dist_abs(View):
 class Sch_State_abs(View):
 	
 	def get(self,request,**kwargs):
-		deptlst=Manage_cate.objects.all().order_by('id')
-		
-		totsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
-		totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_dept').annotate(schmantot=Count('chk_dept'))
-		totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				deptlst=Manage_cate.objects.all().order_by('id')		
+				totsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_manage','chk_dept').annotate(mang_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				totschst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).values('chk_dept').annotate(schmantot=Count('chk_dept'))
+				totschgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3]).count()
 
-		bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
-		bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_dept').annotate(bimantot=Count('chk_dept'))
-		bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).count()
-		aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
-		aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
-		aigrtot=Academicinfo.objects.all().count()
-		iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
-		iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
-		iigrtot=Infradet.objects.all().count()
+				bitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept')).order_by('chk_dept','chk_manage')
+				bischst=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_dept').annotate(bimantot=Count('chk_dept'))
+				bigrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).count()
 
-		cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
-		csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
-		csgrtot=Class_section.objects.all().values('school_key').distinct().count()
+				aitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),acad_schcoun=Count('academicinfo')).order_by('chk_dept','chk_manage')
+				aistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(acad_schtot=Count('academicinfo')).order_by('chk_dept')
+				aigrtot=Academicinfo.objects.all().count()
 
-		tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1').values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		tpgrtot=Staff.objects.filter(staff_cat='1').aggregate(Sum('post_sanc'))
-		
-		tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		tpfgrtot=Staff.objects.filter(staff_cat='1',post_filled__gt='0').aggregate(Sum('post_filled'))
+				iitotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bi_schtot=Count('chk_dept'),infra_schcoun=Count('infradet')).order_by('chk_dept','chk_manage')
+				iistot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(infra_schtot=Count('infradet')).order_by('chk_dept')
+				iigrtot=Infradet.objects.all().count()
 
-		ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2').values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
-		ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2').values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
-		ntpgrtot=Staff.objects.filter(staff_cat='2').aggregate(Sum('post_sanc'))
-		
-		ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
-		ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
-		ntpfgrtot=Staff.objects.filter(staff_cat='2',post_filled__gt='0').aggregate(Sum('post_filled'))
+				cstotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(cs_schtot=Count('chk_dept'),cs_schcoun=Count('class_section__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				csstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(cs_subtot=Count('class_section__school_key',distinct = True)).order_by('chk_dept')
+				csgrtot=Class_section.objects.all().values('school_key').distinct().count()
 
-		return render(request,'state_abs.html',locals())
+				tptotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('chk_manage','chk_dept').annotate(tp_schtot=Count('chk_dept'),tp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				tpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1').values('chk_dept').annotate(tp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				tpgrtot=Staff.objects.filter(staff_cat='1').aggregate(Sum('post_sanc'))
+				
+				tpftotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(tpf_schtot=Count('chk_dept'),tpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				tpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('chk_dept').annotate(tpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				tpfgrtot=Staff.objects.filter(staff_cat='1',post_filled__gt='0').aggregate(Sum('post_filled'))
+
+				ntptotsch=Basicinfo.objects.filter(staff__staff_cat='2').values('chk_manage','chk_dept').annotate(ntp_schtot=Count('chk_dept'),ntp_schcoun=Sum('staff__post_sanc')).order_by('chk_dept','chk_manage')
+				ntpstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2').values('chk_dept').annotate(ntp_schtot=Sum('staff__post_sanc')).order_by('chk_dept')
+				ntpgrtot=Staff.objects.filter(staff_cat='2').aggregate(Sum('post_sanc'))
+				
+				ntpftotsch=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('chk_manage','chk_dept').annotate(ntpf_schtot=Count('chk_dept'),ntpf_schcoun=Sum('staff__post_filled')).order_by('chk_dept','chk_manage')
+				ntpfstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('chk_dept').annotate(ntpf_schtot=Sum('staff__post_filled')).order_by('chk_dept')
+				ntpfgrtot=Staff.objects.filter(staff_cat='2',post_filled__gt='0').aggregate(Sum('post_filled'))
+
+				ldtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(ld_schtot=Count('chk_dept'),ld_schcoun=Count('land__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ldstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(ld_subtot=Count('land__school_key',distinct = True)).order_by('chk_dept')
+				ldgrtot=Land.objects.all().values('school_key').distinct().count()
+
+				bdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bd_schtot=Count('chk_dept'),bd_schcoun=Count('building__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				bdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(bd_subtot=Count('building__school_key',distinct = True)).order_by('chk_dept')
+				bdgrtot=Building.objects.all().values('school_key').distinct().count()
+
+				badtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(bad_schtot=Count('chk_dept'),bad_schcoun=Count('building_abs__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				badstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(bad_subtot=Count('building_abs__school_key',distinct = True)).order_by('chk_dept')
+				badgrtot=Building_abs.objects.all().values('school_key').distinct().count()
+
+				sdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(sd_schtot=Count('chk_dept'),sd_schcoun=Count('sports__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				sdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(sd_subtot=Count('sports__school_key',distinct = True)).order_by('chk_dept')
+				sdgrtot=Sports .objects.all().values('school_key').distinct().count()
+
+				icttotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(ict_schtot=Count('chk_dept'),ict_schcoun=Count('ictentry__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ictstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(ict_subtot=Count('ictentry__school_key',distinct = True)).order_by('chk_dept')
+				ictgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).aggregate(Count('ictentry__school_key',distinct = True))
+
+				ppdtotsch=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3]).values('chk_manage','chk_dept').annotate(ppd_schtot=Count('chk_dept'),ppd_schcoun=Count('passpercent__school_key',distinct = True)).order_by('chk_dept','chk_manage')
+				ppdstot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(ppd_subtot=Count('passpercent__school_key',distinct = True)).order_by('chk_dept')
+				ppdgrtot=Passpercent.objects.all().values('school_key').distinct().count()
+
+				return render(request,'state_abs.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 class Sch_sr_bi(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				dl=District.objects.all().order_by('district_name')
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('district')).order_by('district')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('district'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('manage_cate'))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).count()
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('district')).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('district'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('manage_cate'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('district')).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('district'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('manage_cate'))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('district')).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('district'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('manage_cate'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).count()
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('district')).order_by('district')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('district'))
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('edu_dist_id')).order_by('edu_dist_id')
+				
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('manage_cate'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).count()
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('district')).order_by('district')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('district'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('manage_cate'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).count()
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('district')).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('district'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('manage_cate'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).count()
 
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('district')).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('district'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('manage_cate'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).count()
+				return render(request,'drep_bi.html',locals())
+			else:
 
-		return render(request,'drep_bi.html',locals())
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
 
 
 
 class Sch_sr_ai(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('academicinfo__school_key')).order_by('district')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('academicinfo__school_key'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('academicinfo__school_key'))
-		mantotal=Academicinfo.objects.all().count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('academicinfo__school_key')).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('academicinfo__school_key'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('academicinfo__school_key'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('academicinfo__school_key')).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('academicinfo__school_key'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('academicinfo__school_key'))
+				mantotal=Academicinfo.objects.all().count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('academicinfo__school_key')).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('academicinfo__school_key'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('academicinfo__school_key'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('academicinfo__school_key')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('academicinfo__school_key')).order_by('edu_dist_id')
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('academicinfo__school_key')).order_by('district')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('academicinfo__school_key'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('academicinfo__school_key'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('academicinfo__school_key')).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('academicinfo__school_key'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('academicinfo__school_key'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
 
-		return render(request,'drep_ai.html',locals())
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('academicinfo__school_key')).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('academicinfo__school_key'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('academicinfo__school_key'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('academicinfo__school_key')).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('academicinfo__school_key'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('academicinfo__school_key'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('academicinfo__school_key').count()
+				return render(request,'drep_ai.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
 
 
 class Sch_sr_ii(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('infradet__school_key')).order_by('district')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('infradet__school_key'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('infradet__school_key'))
-		mantotal=Infradet.objects.all().count()
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('infradet__school_key')).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('infradet__school_key'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('infradet__school_key'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('infradet__school_key')).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('infradet__school_key'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('infradet__school_key'))
+				mantotal=Infradet.objects.all().count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('infradet__school_key')).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('infradet__school_key'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('infradet__school_key'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('infradet__school_key')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('infradet__school_key')).order_by('edu_dist_id')
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('infradet__school_key')).order_by('district')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('infradet__school_key'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('infradet__school_key'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
 
-		return render(request,'drep_ii.html',locals())
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('infradet__school_key')).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('infradet__school_key'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('infradet__school_key'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('infradet__school_key')).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('infradet__school_key'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('infradet__school_key'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('infradet__school_key')).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('infradet__school_key'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('infradet__school_key'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('infradet__school_key').count()
+				return render(request,'drep_ii.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
 
 
 
 class Sch_sr_cs(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('class_section__school_key',distinct = True)).order_by('district')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('class_section__school_key',distinct = True))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('class_section__school_key',distinct = True))
-		mantotal=Class_section.objects.all().values('school_key').distinct().count()
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('class_section__school_key',distinct = True))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('class_section__school_key',distinct = True))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('class_section__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('class_section__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('class_section__school_key',distinct = True))
+				mantotal=Class_section.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('class_section__school_key',distinct = True)).order_by('edu_dist_id')
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('class_section__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('class_section__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
 
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('class_section__school_key',distinct = True)).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('class_section__school_key',distinct = True))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('class_section__school_key',distinct = True))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('class_section__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('class_section__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('class_section__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('class_section__school_key',distinct = True)).order_by('district')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('class_section__school_key',distinct = True))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('class_section__school_key',distinct = True))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('class_section__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('class_section__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('class_section__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('class_section__school_key').distinct().count()
 
-		return render(request,'drep_cs.html',locals())
+				return render(request,'drep_cs.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
 
 
 
 class Sch_sr_ti(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','district').annotate(mdet=Sum('staff__post_sanc')).order_by('district')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(mantot=Sum('staff__post_sanc'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
-		mantotal=Staff.objects.filter(staff_cat='1').aggregate(Sum('post_sanc'))
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1').values('manage_cate_id','district').annotate(dsemdet=Sum('staff__post_sanc')).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(dsemantot=Sum('staff__post_sanc'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','district').annotate(mdet=Sum('staff__post_sanc')).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(mantot=Sum('staff__post_sanc'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
+				mantotal=Staff.objects.filter(staff_cat='1').aggregate(Sum('post_sanc'))
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='1').values('manage_cate_id','district').annotate(deemdet=Sum('staff__post_sanc')).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(deemantot=Sum('staff__post_sanc'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','edu_dist_id').annotate(dsemdet=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('edu_dist_id').annotate(dsemantot=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemanfdet_ed=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','edu_dist_id').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
+				dsemanfsubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('edu_dist_id').annotate(dsemanftot=Sum('staff__post_filled'))
 
-		manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(mfdet=Sum('staff__post_filled')).order_by('district')
-		manfsubtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(manftot=Sum('staff__post_filled'))
-		manfgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
-		manftotal=Staff.objects.filter(staff_cat='1',post_filled__gt='0').aggregate(Sum('post_filled'))
-		
-		dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
-		dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(dsemanftot=Sum('staff__post_filled'))
-		dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
-		dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(deemfdet=Count('staff__school_key')).order_by('district')
-		deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(deemanftot=Sum('staff__post_filled'))
-		deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
-		deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','district').annotate(dsemdet=Sum('staff__post_sanc')).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
 
-		return render(request,'drep_ti.html',locals())
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','district').annotate(deemdet=Sum('staff__post_sanc')).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('district').annotate(deemantot=Sum('staff__post_sanc'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
+
+				manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(mfdet=Sum('staff__post_filled')).order_by('district')
+				manfsubtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(manftot=Sum('staff__post_filled'))
+				manfgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
+				manftotal=Staff.objects.filter(staff_cat='1',post_filled__gt='0').aggregate(Sum('post_filled'))
+				
+				dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
+				dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(dsemanftot=Sum('staff__post_filled'))
+				dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
+				dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+
+				deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(deemfdet=Count('staff__school_key')).order_by('district')
+				deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('district').annotate(deemanftot=Sum('staff__post_filled'))
+				deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
+				deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				return render(request,'drep_ti.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
 
 
 class Sch_sr_nti(View):
 	
 	def get(self,request,**kwargs):
-		dl=District.objects.all().order_by('id')
-		schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
-		disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
 
-		mandet=Basicinfo.objects.filter(staff__staff_cat='2').values('manage_cate_id','district').annotate(mdet=Sum('staff__post_sanc')).order_by('district')
-		mansubtot=Basicinfo.objects.filter(staff__staff_cat='2').values('district').annotate(mantot=Sum('staff__post_sanc'))
-		mangrtot=Basicinfo.objects.filter(staff__staff_cat='2').values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
-		mantotal=Staff.objects.filter(staff_cat='2').aggregate(Sum('post_sanc'))
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2').values('manage_cate_id','district').annotate(dsemdet=Sum('staff__post_sanc')).order_by('district')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('district').annotate(dsemantot=Sum('staff__post_sanc'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				mandet=Basicinfo.objects.filter(staff__staff_cat='2').values('manage_cate_id','district').annotate(mdet=Sum('staff__post_sanc')).order_by('district')
+				mansubtot=Basicinfo.objects.filter(staff__staff_cat='2').values('district').annotate(mantot=Sum('staff__post_sanc'))
+				mangrtot=Basicinfo.objects.filter(staff__staff_cat='2').values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
+				mantotal=Staff.objects.filter(staff_cat='2').aggregate(Sum('post_sanc'))
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='2').values('manage_cate_id','district').annotate(deemdet=Sum('staff__post_sanc')).order_by('district')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('district').annotate(deemantot=Sum('staff__post_sanc'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate_id','edu_dist_id').annotate(dsemdet=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('edu_dist_id').annotate(dsemantot=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemanfdet_ed=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','edu_dist_id').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
+				dsemanfsubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('edu_dist_id').annotate(dsemanftot=Sum('staff__post_filled'))
 
-		manfdet=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(mfdet=Sum('staff__post_filled')).order_by('district')
-		manfsubtot=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(manftot=Sum('staff__post_filled'))
-		manfgrtot=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
-		manftotal=Staff.objects.filter(staff_cat='2',post_filled__gt='0').aggregate(Sum('post_filled'))
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate_id','district').annotate(dsemdet=Sum('staff__post_sanc')).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('district').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate_id','district').annotate(deemdet=Sum('staff__post_sanc')).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('district').annotate(deemantot=Sum('staff__post_sanc'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+
+				manfdet=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(mfdet=Sum('staff__post_filled')).order_by('district')
+				manfsubtot=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(manftot=Sum('staff__post_filled'))
+				manfgrtot=Basicinfo.objects.filter(staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
+				manftotal=Staff.objects.filter(staff_cat='2',post_filled__gt='0').aggregate(Sum('post_filled'))
+				
+				dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
+				dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(dsemanftot=Sum('staff__post_filled'))
+				dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
+				dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+
+				deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(deemfdet=Sum('staff__post_filled')).order_by('district')
+				deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(deemanftot=Sum('staff__post_filled'))
+				deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
+				deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				return render(request,'drep_nti.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+
+class Sch_sr_ld(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('land__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('land__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('land__school_key',distinct = True))
+				mantotal=Land.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('land__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('land__school_key',distinct = True)).order_by('edu_dist_id')
+
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('land__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('land__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('land__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('land__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('land__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('land__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('land__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('land__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('land__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('land__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('land__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('land__school_key').distinct().count()
+				return render(request,'drep_ld.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+class Sch_sr_bd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('building__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('building__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('building__school_key',distinct = True))
+				mantotal=Building.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('building__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('building__school_key',distinct = True)).order_by('edu_dist_id')
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('building__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('building__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('building__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('building__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('building__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('building__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('building__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('building__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('building__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('building__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('building__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('building__school_key').distinct().count()
+				return render(request,'drep_bd.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+class Sch_sr_bad(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('building_abs__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('building_abs__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('building_abs__school_key',distinct = True))
+				mantotal=Building_abs.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('building_abs__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('building_abs__school_key',distinct = True)).order_by('edu_dist_id')
+
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('building_abs__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('building_abs__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('building_abs__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('building_abs__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('building_abs__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('building_abs__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('building_abs__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('building_abs__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('building_abs__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('building_abs__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('building_abs__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('building_abs__school_key').distinct().count()
+				return render(request,'drep_bad.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+class Sch_sr_sd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('sports__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('sports__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('sports__school_key',distinct = True))
+				mantotal=Sports.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('sports__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('sports__school_key',distinct = True)).order_by('edu_dist_id')
+
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('sports__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('sports__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('sports__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('sports__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('sports__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('sports__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('sports__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('sports__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('sports__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('sports__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('sports__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('sports__school_key').distinct().count()
+				return render(request,'drep_sd.html',locals())
+			else:
+
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+class Sch_sr_ict(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('ictentry__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('ictentry__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('ictentry__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).aggregate(Count('ictentry__school_key',distinct = True))
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('ictentry__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('ictentry__school_key',distinct = True)).order_by('edu_dist_id')
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('ictentry__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('ictentry__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('ictentry__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('ictentry__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('ictentry__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('ictentry__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('ictentry__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('ictentry__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('ictentry__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('ictentry__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('ictentry__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('ictentry__school_key').distinct().count()
+				return render(request,'drep_ict.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+
+class Sch_sr_ppd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				dl=District.objects.all().order_by('district_name')
+				schlst=Basicinfo.objects.all().values('chk_dept','district').annotate(disttot=Count('district')).order_by('district')
+				disttot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('district').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3]).values('manage_cate_id','district').annotate(mdet=Count('passpercent__school_key',distinct = True)).order_by('district')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('district').annotate(mantot=Count('passpercent__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(mangtot=Count('passpercent__school_key',distinct = True))
+				mantotal=Passpercent.objects.all().values('school_key').distinct().count()
+
+				edist_mas=Edn_dist_mas.objects.all().order_by('edn_dist_name')
+				schlst_ed=Basicinfo.objects.all().values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('passpercent__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('passpercent__school_key',distinct = True)).order_by('edu_dist_id')
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1]).values('manage_cate_id','district').annotate(dsemdet=Count('passpercent__school_key',distinct = True)).order_by('district')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('district').annotate(dsemantot=Count('passpercent__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dsemangtot=Count('passpercent__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('passpercent__school_key').distinct().count()
+
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2]).values('manage_cate_id','district').annotate(deemdet=Count('passpercent__school_key',distinct = True)).order_by('district')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('district').annotate(deemantot=Count('passpercent__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(deemangtot=Count('passpercent__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3]).values('passpercent__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3]).values('manage_cate_id','district').annotate(dmsmdet=Count('passpercent__school_key',distinct = True)).order_by('district')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('district').annotate(dmsmantot=Count('passpercent__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('manage_cate').annotate(dmsmangtot=Count('passpercent__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3]).values('passpercent__school_key').distinct().count()
+				return render(request,'drep_ppd.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
 		
-		dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(dsemfdet=Sum('staff__post_filled')).order_by('district')
-		dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(dsemanftot=Sum('staff__post_filled'))
-		dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
-		dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
-
-		deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','district').annotate(deemfdet=Sum('staff__post_filled')).order_by('district')
-		deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('district').annotate(deemanftot=Sum('staff__post_filled'))
-		deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
-		deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
-
-		return render(request,'drep_nti.html',locals())
-
 
 class Sch_blkr_bi(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		try:
-			basic_det=Basicinfo.objects.get(udise_code=request.user.username)
-		except:
-			pass
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']			
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.district_id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('edu_dist_id')).order_by('block')
+				dsemansubtot_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('edu_dist_id').annotate(dsemantot=Count('edu_dist_id')).order_by('block')
+				
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+
+				
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('block')).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('block'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('manage_cate'))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('block')).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('block'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('manage_cate'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('block')).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('block'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('manage_cate'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('block')).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('block'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('manage_cate'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).count()
+				return render(request,'blkrep_bi.html',locals())
+			else:
+				return HttpResponseRedirect('/')
 		else:
-			basic_det=Basicinfo.objects.get(udise_code=request.user.username)
-		finally:
-			pass
-
-		schlst=Basicinfo.objects.all().values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
-
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('block')).order_by('block')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('block'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('manage_cate'))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).count()
-
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('block')).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('block'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('manage_cate'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).count()
-
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('block')).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('block'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('manage_cate'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).count()
-
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('block')).order_by('block')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('block'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('manage_cate'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).count()
-		return render(request,'blkrep_bi.html',locals())
-
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 class Sch_blkr_ai(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
 
-		schlst=Basicinfo.objects.all().values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('academicinfo__school_key')).order_by('block')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('academicinfo__school_key'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('academicinfo__school_key'))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+					
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('academicinfo__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('academicinfo__school_key'))
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('academicinfo__school_key')).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('academicinfo__school_key'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('academicinfo__school_key'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('academicinfo__school_key')).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('academicinfo__school_key'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('academicinfo__school_key'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('academicinfo__school_key')).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('academicinfo__school_key'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('academicinfo__school_key'))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('academicinfo__school_key')).order_by('block')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('academicinfo__school_key'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('academicinfo__school_key'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
-		return render(request,'blkrep_ai.html',locals())
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('academicinfo__school_key')).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('academicinfo__school_key'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('academicinfo__school_key'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('academicinfo__school_key')).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('academicinfo__school_key'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('academicinfo__school_key'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('academicinfo__school_key')).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('academicinfo__school_key'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('academicinfo__school_key'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('academicinfo__school_key').count()
+				return render(request,'blkrep_ai.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 class Sch_blkr_ii(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
 
-		schlst=Basicinfo.objects.all().values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('infradet__school_key')).order_by('block')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('infradet__school_key'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('infradet__school_key'))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('infradet__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('infradet__school_key'))
+				
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('infradet__school_key')).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('infradet__school_key'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('infradet__school_key'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('infradet__school_key')).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('infradet__school_key'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('infradet__school_key'))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('infradet__school_key')).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('infradet__school_key'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('infradet__school_key'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('infradet__school_key')).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('infradet__school_key'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('infradet__school_key'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('infradet__school_key')).order_by('block')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('infradet__school_key'))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('infradet__school_key'))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
-		return render(request,'blkrep_ii.html',locals())
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('infradet__school_key')).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('infradet__school_key'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('infradet__school_key'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
 
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('infradet__school_key')).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('infradet__school_key'))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('infradet__school_key'))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('infradet__school_key').count()
+				return render(request,'blkrep_ii.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
 class Sch_blkr_cs(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
 
-		schlst=Basicinfo.objects.all().values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('class_section__school_key',distinct = True)).order_by('block')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('class_section__school_key',distinct = True))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('class_section__school_key',distinct = True))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('class_section__school_key',distinct = True))
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('class_section__school_key',distinct = True))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('class_section__school_key',distinct = True))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('class_section__school_key',distinct = True)).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('class_section__school_key',distinct = True))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('class_section__school_key',distinct = True))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('class_section__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('class_section__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('class_section__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
 
-		dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('class_section__school_key',distinct = True)).order_by('block')
-		dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('class_section__school_key',distinct = True))
-		dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('class_section__school_key',distinct = True))
-		dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
-		return render(request,'blkrep_cs.html',locals())
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('class_section__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('class_section__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('class_section__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
 
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('class_section__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('class_section__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('class_section__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('class_section__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('class_section__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('class_section__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('class_section__school_key').distinct().count()
+				return render(request,'blkrep_cs.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
 
 class Sch_blkr_ti(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
 
-		schlst=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).count()
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		mandet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='1',district=d_id).values('manage_cate_id','block').annotate(mdet=Sum('staff__post_sanc')).order_by('block')
-		mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).values('block').annotate(mantot=Sum('staff__post_sanc'))
-		mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
-		mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).aggregate(manatot=Sum('staff__post_sanc'))
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='1').values('manage_cate_id','edu_dist_id').annotate(dsemdet=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemanfdet_ed=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','edu_dist_id').annotate(dsemfdet=Sum('staff__post_filled')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('edu_dist_id').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemanfsubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('edu_dist_id').annotate(dsemanftot=Sum('staff__post_filled'))
+
+				schlst=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='1',district=d_id).values('manage_cate_id','block').annotate(mdet=Sum('staff__post_sanc')).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).values('block').annotate(mantot=Sum('staff__post_sanc'))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).aggregate(manatot=Sum('staff__post_sanc'))
 
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1',district=d_id).values('manage_cate_id','block').annotate(dsemdet=Sum('staff__post_sanc')).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('block').annotate(dsemantot=Sum('staff__post_sanc'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='1',district=d_id).values('manage_cate_id','block').annotate(dsemdet=Sum('staff__post_sanc')).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('block').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='1').values('manage_cate_id','block').annotate(deemdet=Sum('staff__post_sanc')).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('block').annotate(deemantot=Sum('staff__post_sanc'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='1').values('manage_cate_id','block').annotate(deemdet=Sum('staff__post_sanc')).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('block').annotate(deemantot=Sum('staff__post_sanc'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='1').aggregate(Sum('staff__post_sanc'))
 
-		manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('manage_cate_id','block').annotate(mfdet=Sum('staff__post_filled')).order_by('block')
-		manfsubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('block').annotate(manftot=Sum('staff__post_filled'))
-		manfgrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
-		manftotal=Basicinfo.objects.filter(district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
-		manftotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).aggregate(manftot=Sum('staff__post_filled'))
+				manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('manage_cate_id','block').annotate(mfdet=Sum('staff__post_filled')).order_by('block')
+				manfsubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('block').annotate(manftot=Sum('staff__post_filled'))
+				manfgrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0',district=d_id).values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
+				manftotal=Basicinfo.objects.filter(district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				manftotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='1',district=d_id).aggregate(manftot=Sum('staff__post_filled'))
 
-		dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(dsemfdet=Sum('staff__post_filled')).order_by('block')
-		dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('block').annotate(dsemanftot=Sum('staff__post_filled'))
-		dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
-		dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(dsemfdet=Sum('staff__post_filled')).order_by('block')
+				dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('block').annotate(dsemanftot=Sum('staff__post_filled'))
+				dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
+				dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(deemfdet=Sum('staff__post_filled')).order_by('block')
-		deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('block').annotate(deemanftot=Sum('staff__post_filled'))
-		deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
-		deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(deemfdet=Sum('staff__post_filled')).order_by('block')
+				deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('block').annotate(deemanftot=Sum('staff__post_filled'))
+				deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
+				deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='1',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		return render(request,'blkrep_ti.html',locals())
-
+				return render(request,'blkrep_ti.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
 
 class Sch_blkr_nti(View):
 	
 	def get(self,request,**kwargs):
-		d_id=self.kwargs['blk']
-		if (self.kwargs.get('code')):
-			dept_opt=int(self.kwargs.get('code'))	
-		bl=Block.objects.filter(district=d_id).order_by('block_name')
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
 
-		schlst=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
-		blktot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
-		schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
-		schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).count()
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
 
-		mandet=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('manage_cate_id','block').annotate(mdet=Sum('staff__post_sanc')).order_by('block')
-		mansubtot=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('block').annotate(mantot=Sum('staff__post_sanc'))
-		mangrtot=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
-		mantotal=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).aggregate(manatot=Sum('staff__post_sanc'))
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3],staff__staff_cat='2').values('manage_cate_id','edu_dist_id').annotate(dsemdet=Sum('staff__post_sanc')).order_by('edu_dist_id')
+				dsemanfdet_ed=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','edu_dist_id').annotate(dsemfdet=Sum('staff__post_filled')).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('edu_dist_id').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemanfsubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('edu_dist_id').annotate(dsemanftot=Sum('staff__post_filled'))
+
+				schlst=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('manage_cate_id','block').annotate(mdet=Sum('staff__post_sanc')).order_by('block')
+				mansubtot=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('block').annotate(mantot=Sum('staff__post_sanc'))
+				mangrtot=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).values('manage_cate').annotate(mangtot=Sum('staff__post_sanc'))
+				mantotal=Basicinfo.objects.filter(staff__staff_cat='2',district=d_id).aggregate(manatot=Sum('staff__post_sanc'))
 
 
-		dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2',district=d_id).values('manage_cate_id','block').annotate(dsemdet=Sum('staff__post_sanc')).order_by('block')
-		dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('block').annotate(dsemantot=Sum('staff__post_sanc'))
-		dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
-		dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],staff__staff_cat='2',district=d_id).values('manage_cate_id','block').annotate(dsemdet=Sum('staff__post_sanc')).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('block').annotate(dsemantot=Sum('staff__post_sanc'))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('manage_cate').annotate(dsemangtot=Sum('staff__post_sanc'))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
 
-		deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='2').values('manage_cate_id','block').annotate(deemdet=Sum('staff__post_sanc')).order_by('block')
-		deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('block').annotate(deemantot=Sum('staff__post_sanc'))
-		deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
-		deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],staff__staff_cat='2').values('manage_cate_id','block').annotate(deemdet=Sum('staff__post_sanc')).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('block').annotate(deemantot=Sum('staff__post_sanc'))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').values('manage_cate').annotate(deemangtot=Sum('staff__post_sanc'))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2],district=d_id,staff__staff_cat='2').aggregate(Sum('staff__post_sanc'))
 
-		manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('manage_cate_id','block').annotate(mfdet=Sum('staff__post_filled')).order_by('block')
-		manfsubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('block').annotate(manftot=Sum('staff__post_filled'))
-		manfgrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
-		manftotal=Basicinfo.objects.filter(district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
-		manftotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',district=d_id).aggregate(manftot=Sum('staff__post_filled'))
+				manfdet=Basicinfo.objects.filter(chk_dept__in=[1,2],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('manage_cate_id','block').annotate(mfdet=Sum('staff__post_filled')).order_by('block')
+				manfsubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('block').annotate(manftot=Sum('staff__post_filled'))
+				manfgrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0',district=d_id).values('manage_cate').annotate(manfgtot=Sum('staff__post_filled'))
+				manftotal=Basicinfo.objects.filter(district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				manftotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],staff__staff_cat='2',district=d_id).aggregate(manftot=Sum('staff__post_filled'))
 
-		dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(dsemfdet=Sum('staff__post_filled')).order_by('block')
-		dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('block').annotate(dsemanftot=Sum('staff__post_filled'))
-		dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
-		dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				dsemanfdet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(dsemfdet=Sum('staff__post_filled')).order_by('block')
+				dsemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('block').annotate(dsemanftot=Sum('staff__post_filled'))
+				dsemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(dsemanfgtot=Sum('staff__post_filled'))
+				dsemanftotal=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(deemfdet=Sum('staff__post_filled')).order_by('block')
-		deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('block').annotate(deemanftot=Sum('staff__post_filled'))
-		deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
-		deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
+				deemanfdet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate_id','block').annotate(deemfdet=Sum('staff__post_filled')).order_by('block')
+				deemanfsubtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('block').annotate(deemanftot=Sum('staff__post_filled'))
+				deemanfgrtot=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').values('manage_cate').annotate(deemangftot=Sum('staff__post_filled'))
+				deemanftotal=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id,manage_cate_id__in=[1,2,3],staff__staff_cat='2',staff__post_filled__gt='0').aggregate(Sum('staff__post_filled'))
 
-		return render(request,'blkrep_nti.html',locals())
+				return render(request,'blkrep_nti.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+class Sch_blkr_ld(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('land__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('land__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('land__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('land__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('land__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('land__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('land__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('land__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('land__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('land__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('land__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('land__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('land__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('land__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('land__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('land__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('land__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('land__school_key').distinct().count()
+				return render(request,'blkrep_ld.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+class Sch_blkr_bd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('building__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('building__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('building__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('building__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('building__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('building__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('building__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('building__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('building__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('building__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('building__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('building__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('building__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('building__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('building__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('building__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('building__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('building__school_key').distinct().count()
+				return render(request,'blkrep_bd.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+class Sch_blkr_bad(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('building_abs__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('building_abs__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('building_abs__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('building_abs__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('building_abs__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('building_abs__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('building_abs__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('building_abs__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('building_abs__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('building_abs__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('building_abs__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('building_abs__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('building_abs__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('building_abs__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('building_abs__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('building_abs__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('building_abs__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('building_abs__school_key').distinct().count()
+				return render(request,'blkrep_bad.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+class Sch_blkr_sd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('sports__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('sports__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('sports__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('sports__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('sports__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('sports__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('sports__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('sports__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('sports__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('sports__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('sports__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('sports__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('sports__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('sports__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('sports__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('sports__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('sports__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('sports__school_key').distinct().count()
+				return render(request,'blkrep_sd.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+
+class Sch_blkr_ict(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('ictentry__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('ictentry__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('ictentry__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('ictentry__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('ictentry__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('ictentry__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('ictentry__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('ictentry__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('ictentry__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('ictentry__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('ictentry__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('ictentry__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('ictentry__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('ictentry__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('ictentry__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('ictentry__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('ictentry__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('ictentry__school_key').distinct().count()
+				return render(request,'blkrep_ict.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+
+class Sch_blkr_ppd(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if (request.user.account.user_category_id!=1) | (request.user.account.user_category_id!=2) | (request.user.account.user_category_id!=3) | (request.user.account.user_category_id!=18):
+		
+				if (self.kwargs.get('code')):
+					dept_opt=int(self.kwargs.get('code'))
+
+				if (self.kwargs.get('code1')=='1'):
+					d_id=self.kwargs['blk']
+				elif(self.kwargs.get('code1')=='2'):
+					chk_dist=Block.objects.get(id=int(self.kwargs.get('blk')))
+					d_id=chk_dist.id
+					dept_opt=''
+				else:
+					dist_id=Account.objects.get(user_id=self.request.user.id)
+					d_id=dist_id.associated_with
+				
+				edist_mas=Edn_dist_block.objects.filter(district_code=d_id).distinct('edn_dist_id').order_by('edn_dist_id')
+				bl=Block.objects.filter(district=d_id).order_by('block_name')
+				bl1=Edn_dist_block.objects.filter(district_code=d_id).order_by('block__block_name')
+				schlst_ed=Basicinfo.objects.filter(district=d_id).values('chk_dept','edu_dist_id').annotate(disttot=Count('edu_dist_id')).order_by('edu_dist_id')
+				dsemandet_ed=Basicinfo.objects.filter(district=d_id,chk_dept__in=[1],manage_cate_id__in=[1,2,3]).values('manage_cate_id','edu_dist_id').annotate(dsemdet=Count('passpercent__school_key',distinct = True)).order_by('edu_dist_id')
+				dsemansubtot_ed=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('edu_dist_id').annotate(dsemantot=Count('passpercent__school_key',distinct = True))
+
+				schlst=Basicinfo.objects.filter(district=d_id).values('chk_dept','block').annotate(schblktot=Count('block')).order_by('block')
+				blktot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('block').annotate(schsubtot=Count('chk_dept'))
+				schgrtot=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('chk_dept').annotate(schgtot=Count('chk_dept'))
+				schtotal=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).count()
+
+				mandet=Basicinfo.objects.filter(chk_dept__in=[1,2,3],district=d_id).values('manage_cate_id','block').annotate(mdet=Count('passpercent__school_key',distinct = True)).order_by('block')
+				mansubtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(mantot=Count('passpercent__school_key',distinct = True))
+				mangrtot=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(mangtot=Count('passpercent__school_key',distinct = True))
+				mantotal=Basicinfo.objects.filter(manage_cate_id__in=[1,2,3],district=d_id).values('passpercent__school_key').distinct().count()
+
+				dsemandet=Basicinfo.objects.filter(chk_dept__in=[1],district=d_id).values('manage_cate_id','block').annotate(dsemdet=Count('passpercent__school_key',distinct = True)).order_by('block')
+				dsemansubtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dsemantot=Count('passpercent__school_key',distinct = True))
+				dsemangrtot=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dsemangtot=Count('passpercent__school_key',distinct = True))
+				dsemantotal=Basicinfo.objects.filter(chk_dept__in=[1],manage_cate_id__in=[1,2,3],district=d_id).values('passpercent__school_key').distinct().count()
+
+				deemandet=Basicinfo.objects.filter(chk_dept__in=[2],district=d_id).values('manage_cate_id','block').annotate(deemdet=Count('passpercent__school_key',distinct = True)).order_by('block')
+				deemansubtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(deemantot=Count('passpercent__school_key',distinct = True))
+				deemangrtot=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(deemangtot=Count('passpercent__school_key',distinct = True))
+				deemantotal=Basicinfo.objects.filter(chk_dept__in=[2],manage_cate_id__in=[1,2,3],district=d_id).values('passpercent__school_key').distinct().count()
+
+				dmsmandet=Basicinfo.objects.filter(chk_dept__in=[3],district=d_id).values('manage_cate_id','block').annotate(dmsmdet=Count('passpercent__school_key',distinct = True)).order_by('block')
+				dmsmansubtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('block').annotate(dmsmantot=Count('passpercent__school_key',distinct = True))
+				dmsmangrtot=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('manage_cate').annotate(dmsmangtot=Count('passpercent__school_key',distinct = True))
+				dmsmantotal=Basicinfo.objects.filter(chk_dept__in=[3],manage_cate_id__in=[1,2,3],district=d_id).values('passpercent__school_key').distinct().count()
+				return render(request,'blkrep_ppd.html',locals())
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+
+
+class Deo_srep(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+			if request.user.account.user_category_id==26:	
+				# edist_lst=Edn_dist_block.objects.filter(edn_dist_id__contains=request.user.account.associated_with)
+				# Entry.objects.get(headline__contains='Lennon')
+				dist_id=Account.objects.get(user_id=self.request.user.id)
+				b_id_chk=Block.objects.filter(district=dist_id.associated_with)
+				rep_h='Education District'
+				# if b_id in b_id_chk
+				# if Block.objects.filter(district=dist_id.associated_with).filter(id=b_id).exists():
+				# print 'in deo list'
+				# print edist_lst
+				allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).order_by('chk_dept','chk_manage','udise_code')
+				dsesl=Basicinfo.objects.filter(chk_dept__in=[1],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).order_by('chk_manage','udise_code')
+				deesl=Basicinfo.objects.filter(chk_dept__in=[2],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).order_by('chk_manage','udise_code')
+				dmssl=Basicinfo.objects.filter(chk_dept__in=[3],chk_manage__in=[1,2,3],edu_dist_id=request.user.account.associated_with).order_by('chk_manage','udise_code')
+				schbi=Basicinfo.objects.filter(edu_dist_id=request.user.account.associated_with,manage_cate_id__gt=0).order_by('chk_manage','udise_code')
+				schai=Academicinfo.objects.filter(school_key_id=allsl)
+				schii=Infradet.objects.filter(school_key_id=allsl)
+				schsi=Staff.objects.filter(school_key_id=allsl)			
+				schtsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptstot=Sum('staff__post_sanc'))
+				schtsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptftot=Sum('staff__post_filled'))
+				schntsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntstot=Sum('staff__post_sanc'))
+				schntsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntftot=Sum('staff__post_filled'))
+				schcs=Class_section.objects.filter(school_key_id=allsl)
+
+				# schld=Land.objects.filter(school_key_id=allsl)
+				# schcs=Building.objects.filter(school_key_id=allsl)
+				# schcs=Class_section.objects.filter(school_key_id=allsl)
+				# schcs=Class_section.objects.filter(school_key_id=allsl)
+
+
+
+				return render(request,'schrep.html',locals())
+				# else:
+				# 	print 'in if loop else'
+				# 	previous_page = request.META['HTTP_REFERER']
+				# 	print previous_page
+				# 	return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
+				# 	# return redirect(requst.META['HTTP_REFERER'])
+			else:
+				return HttpResponseRedirect('/')
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
 
 
 class Sch_srep(View):
 	
 	def get(self,request,**kwargs):
-		b_id=self.kwargs['blk']
-		try:
-			dept_opt=int(self.kwargs.get('code'))
-		except Exception:
-			pass
+		if request.user.is_authenticated():
 
-		allsl=Basicinfo.objects.filter(block=b_id).order_by('school_name')
-		blkid=Basicinfo.objects.get(udise_code=int(request.user.username))
-		basic_det=Basicinfo.objects.get(udise_code=request.user.username)
-		dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('school_name')
-		deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('school_name')
-		dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('school_name')
-		schbi=Basicinfo.objects.filter(block=b_id,manage_cate_id__gt=0).order_by('school_name')
-		schai=Academicinfo.objects.filter(school_key_id=allsl)
-		schii=Infradet.objects.filter(school_key_id=allsl)
-		schsi=Staff.objects.filter(school_key_id=allsl)			
-		schtsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptstot=Sum('staff__post_sanc'))
-		schtsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptftot=Sum('staff__post_filled'))
-		schntsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntstot=Sum('staff__post_sanc'))
-		schntsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntftot=Sum('staff__post_filled'))
-		return render(request,'schrep.html',locals())
+			b_id=self.kwargs['blk']
+			dist_id=Account.objects.get(user_id=self.request.user.id)
+			b_id_chk=Block.objects.filter(district=dist_id.associated_with)
+			try:
+				dept_opt=int(self.kwargs.get('code'))
+			except Exception:
+				pass
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				rep_h='Block '
+				allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+				dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+				deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+				dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+				schbi=Basicinfo.objects.filter(block=b_id,manage_cate_id__gt=0).order_by('chk_manage','udise_code')
+				schai=Academicinfo.objects.filter(school_key_id=allsl)
+				schii=Infradet.objects.filter(school_key_id=allsl)
+				schsi=Staff.objects.filter(school_key_id=allsl)			
+				schtsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptstot=Sum('staff__post_sanc'))
+				schtsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptftot=Sum('staff__post_filled'))
+				schntsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntstot=Sum('staff__post_sanc'))
+				schntsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntftot=Sum('staff__post_filled'))
+
+
+
+				return render(request,'schrep.html',locals())				
+			else:
+				if (request.user.account.user_category_id==5)|(request.user.account.user_category_id==6)|(request.user.account.user_category_id==7)|(request.user.account.user_category_id==8)|(request.user.account.user_category_id==12)|(request.user.account.user_category_id==13)|(request.user.account.user_category_id==14)|(request.user.account.user_category_id==22)|(request.user.account.user_category_id==26):
+					if Block.objects.filter(district=dist_id.associated_with).filter(id=b_id).exists():
+						rep_h='Block '
+						allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+						dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+						deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+						dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+						schbi=Basicinfo.objects.filter(block=b_id,manage_cate_id__gt=0).order_by('chk_manage','udise_code')
+						schai=Academicinfo.objects.filter(school_key_id=allsl)
+						schii=Infradet.objects.filter(school_key_id=allsl)
+						schsi=Staff.objects.filter(school_key_id=allsl)			
+						schtsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptstot=Sum('staff__post_sanc'))
+						schtsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptftot=Sum('staff__post_filled'))
+						schntsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntstot=Sum('staff__post_sanc'))
+						schntsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntftot=Sum('staff__post_filled'))
+
+						return render(request,'schrep.html',locals())
+
+						# schld=Land.objects.filter(school_key_id=allsl)
+						# schcs=Building.objects.filter(school_key_id=allsl)
+						# schcs=Class_section.objects.filter(school_key_id=allsl)
+						# schcs=Class_section.objects.filter(school_key_id=allsl)
+					else:
+						return HttpResponseRedirect('/')
+				else:
+					if (request.user.account.user_category_id==2)|(request.user.account.user_category_id==18):
+						if Block.objects.filter(id=dist_id.associated_with).exists():
+							rep_h='Block '
+							allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+							dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+							deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+							dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+							schbi=Basicinfo.objects.filter(block=b_id,manage_cate_id__gt=0).order_by('chk_manage','udise_code')
+							schai=Academicinfo.objects.filter(school_key_id=allsl)
+							schii=Infradet.objects.filter(school_key_id=allsl)
+							schsi=Staff.objects.filter(school_key_id=allsl)			
+							schtsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptstot=Sum('staff__post_sanc'))
+							schtsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='1').values('staff__school_key_id').annotate(tptftot=Sum('staff__post_filled'))
+							schntsis=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntstot=Sum('staff__post_sanc'))
+							schntsif=Basicinfo.objects.filter(staff__school_key_id=allsl,staff__staff_cat='2').values('staff__school_key_id').annotate(tpntftot=Sum('staff__post_filled'))
+							return render(request,'schrep.html',locals())
+						else:
+							return HttpResponseRedirect('/')
+					else:
+						return HttpResponseRedirect('/')							
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+	
+
+
+class Sch_srep1(View):
+	
+	def get(self,request,**kwargs):
+		if request.user.is_authenticated():
+
+			b_id=self.kwargs['blk']
+			dist_id=Account.objects.get(user_id=self.request.user.id)
+			b_id_chk=Block.objects.filter(district=dist_id.associated_with)
+			try:
+				dept_opt=int(self.kwargs.get('code'))
+			except Exception:
+				pass
+			if (request.user.account.user_category_id==4)|(request.user.account.user_category_id==9)|(request.user.account.user_category_id==10)|(request.user.account.user_category_id==11)|(request.user.account.user_category_id==15)|(request.user.account.user_category_id==16)|(request.user.account.user_category_id==17)|(request.user.account.user_category_id==19):
+				rep_h='Block '
+				allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+				dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+				deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+				dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+				schcs=Class_section.objects.filter(school_key_id=allsl)
+				schld=Land.objects.filter(school_key_id=allsl)
+				schbd=Building.objects.filter(school_key_id=allsl)
+				schbad=Building_abs.objects.filter(school_key_id=allsl)
+				schsd=Sports.objects.filter(school_key_id=allsl)
+				schictd=Ictentry.objects.filter(school_key_id=allsl)
+				schgd=Sch_groups.objects.filter(school_key_id=allsl)
+				schppd=Passpercent.objects.filter(school_key_id=allsl)
+
+
+				return render(request,'schrep1.html',locals())				
+			else:
+				if (request.user.account.user_category_id==5)|(request.user.account.user_category_id==6)|(request.user.account.user_category_id==7)|(request.user.account.user_category_id==8)|(request.user.account.user_category_id==12)|(request.user.account.user_category_id==13)|(request.user.account.user_category_id==14)|(request.user.account.user_category_id==22)|(request.user.account.user_category_id==26):
+					if Block.objects.filter(district=dist_id.associated_with).filter(id=b_id).exists():
+						rep_h='Block '
+						allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+						dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+						deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+						dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+						schcs=Class_section.objects.filter(school_key_id=allsl)
+						schcs=Class_section.objects.filter(school_key_id=allsl)
+						schld=Land.objects.filter(school_key_id=allsl)
+						schbd=Building.objects.filter(school_key_id=allsl)
+						schbad=Building_abs.objects.filter(school_key_id=allsl)
+						schsd=Sports.objects.filter(school_key_id=allsl)
+						schictd=Ictentry.objects.filter(school_key_id=allsl)
+						schgd=Sch_groups.objects.filter(school_key_id=allsl)
+						schppd=Passpercent.objects.filter(school_key_id=allsl)
+
+						return render(request,'schrep1.html',locals())
+
+						# schld=Land.objects.filter(school_key_id=allsl)
+						# schcs=Building.objects.filter(school_key_id=allsl)
+						# schcs=Class_section.objects.filter(school_key_id=allsl)
+						# schcs=Class_section.objects.filter(school_key_id=allsl)
+					else:
+						return HttpResponseRedirect('/')
+				else:
+					if (request.user.account.user_category_id==2)|(request.user.account.user_category_id==18):
+						if Block.objects.filter(id=dist_id.associated_with).exists():
+							rep_h='Block '
+							allsl=Basicinfo.objects.filter(chk_dept__in=[1,2,3],block=b_id).order_by('chk_dept','chk_manage','udise_code')
+							dsesl=Basicinfo.objects.filter(chk_dept__in=[1],block=b_id).order_by('chk_manage','udise_code')
+							deesl=Basicinfo.objects.filter(chk_dept__in=[2],block=b_id).order_by('chk_manage','udise_code')
+							dmssl=Basicinfo.objects.filter(chk_dept__in=[3],block=b_id).order_by('chk_manage','udise_code')
+							schcs=Class_section.objects.filter(school_key_id=allsl)
+							schcs=Class_section.objects.filter(school_key_id=allsl)
+							schld=Land.objects.filter(school_key_id=allsl)
+							schbd=Building.objects.filter(school_key_id=allsl)
+							schbad=Building_abs.objects.filter(school_key_id=allsl)
+							schsd=Sports.objects.filter(school_key_id=allsl)
+							schictd=Ictentry.objects.filter(school_key_id=allsl)
+							schgd=Sch_groups.objects.filter(school_key_id=allsl)
+							schppd=Passpercent.objects.filter(school_key_id=allsl)
+							
+							return render(request,'schrep1.html',locals())
+						else:
+							print 'in else part - block-1'
+							return HttpResponseRedirect('/')
+					else:
+						print 'in else part - block-2'
+						return HttpResponseRedirect('/')							
+		else:
+			return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+	
+	
+
+
+
+
+
+
+

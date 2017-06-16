@@ -23,68 +23,154 @@
                 <option value = 'All Directorate Report' >All Directorate Report</option>
        </select></div>
 
- <div id="dse_rep" name="dse_rep" style="visibility:hide">
 
-<center><h2> School Profile - Academicinfo Information Entry - Status Report</h2></center>
+<div id="dse_rep" name="dse_rep" style="visibility:hide">
 
+<center><h2> School Profile - Infrastructure Information - Education District Wise - Status Report</h2></center>
 
                   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
                  
                       <tr>
                         
-                        <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">DISTRICT</th>
+                        <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">DISTRICT / EDN DISTRICT</th>
                         <th width=5% rowspan="2" style="vertical-align:middle;"  class="text-center">D.S.E. - No. of Schools</th>
-                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Academicinfo Information (Management-wise)</th>
+                        <th width=5% colspan="4"  style="vertical-align:middle;" class="text-center">No. of Schools Entered Basic Information (Management-wise)</th>
                       </tr>
                       <tr>  
                         <th width=5% class="text-center">Government</th>
                         <th width=5% class="text-center">Aided</th>
                         <th width=5% class="text-center">Un-Aided</th>
-                        <th width=5% class="text-center" style="vertical-align:middle;">Total</th>
-</tr>
-    {% for i in dl %}
+                        <th width=5% style="vertical-align:middle;" class="text-center">Total</th>
+                      </tr>
+                    {% for i in dl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/1">{{i.district_name}}</a></td>
+                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/1/1/">{{i.district_name}}</a></td>
+          
+
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.district == i.id and j.chk_dept == 1 %}
+                        <span class="pull-right">  
                             {{ j.disttot }}
+                             </span>
                         {% endif %}
                         {% endfor %}
+              
                         </td>
 
 
                         <td align="right">                        
                         {% for j in  dsemandet %}
                                 {% if j.district == i.id and j.manage_cate_id == 1 %}
+                                <span class="pull-right">
                                     {{ j.dsemdet }}
+                                </span>                                    
                                 {% endif %}
                         {% endfor %}
+
                         </td>
                         <td align="right"> 
                         {% for j in dsemandet %}
                                 {% if j.district == i.id and j.manage_cate_id == 2 %}
+                                <span class="pull-right">                                
                                     {{ j.dsemdet }}
+                              </span>                                    
                                 {% endif %}
                         {% endfor %}
+                       
                         </td>
                         <td align="right"> 
                         {% for j in  dsemandet %}
                                 {% if j.district == i.id and j.manage_cate_id == 3 %}
+                                <span class="pull-right">                                
                                     {{ j.dsemdet}}
+                              </span>                                    
                                 {% endif %}
                         {% endfor %}
+                     
                         </td>
 
                         <td align="right"> 
                         {% for j in  dsemansubtot %}
                                 {% if j.district == i.id%}
+                                 <span class="pull-right"> 
                                     {{ j.dsemantot}}
+                                    </span>
                                 {% endif %}
                         {% endfor %}
+
+
                         </td>
     </tr>
+
+
+
+                       {% for j in edist_mas %}
+                       {% if j.district.id == i.id %}
+                        <tr>
+                        <td>
+                        <span style="color:Green" class="pull-right">
+                            {{ j.edn_dist_name }}
+
+                        </span>
+
+                        </td>
+                       
+
+                        <td>
+
+                            {% for ed in  schlst_ed %}
+                            {% if ed.edu_dist_id == j.id and ed.chk_dept == 1  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.disttot}}
+                              </span>
+                            {% endif %}
+                            {% endfor %}                    
+                        </td>
+
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == j.id and ed.manage_cate_id == 1  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+                        </td>
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == j.id and ed.manage_cate_id == 2  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+
+                        </td>
+
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == j.id and ed.manage_cate_id == 3  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+ 
+                        </td>
+                        <td>
+                            {% for ed in  dsemansubtot_ed %}
+                            {% if ed.edu_dist_id == j.id %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemantot}}
+                              </span>
+                            {% endif %}
+                            {% endfor %}
+                        </td>
+                            </tr>
+                            {% endif %}                     
+                        {% endfor %}                          
     {% endfor %}
     <tr>
 <th> TOTAL</th>
@@ -118,15 +204,12 @@
                         <td align="right"> 
                             {{dsemantotal}}
                         </td>
-
-
-
 </tr>
 </table>
-</div>    
+</div>  
 
 <div id="all_rep" name="all_rep" class="form-group" style="visibility:hide"> 
-<center><h2> School Profile - Academicinfo Information Entry - Status Report</h2></center>
+<center><h2> School Profile - Infrastructure Information Details Entry - Status Report</h2></center>
 
 
                   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
@@ -140,7 +223,7 @@
                         <th width=5% rowspan="2" style="vertical-align:middle;" class="text-center">DEE Schools</th>
                         <th width=5% rowspan="2" style="vertical-align:middle;" class="text-center">DMS Schools</th>
                         <th width=5% rowspan="2" style="vertical-align:middle;" class="text-center">Total Schools</th>
-                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Academicinfo Information (Management-wise)</th>
+                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Infrastructure Information Details (Management-wise)</th>
                       </tr>
                       <tr>                         
                         <th width=5% class="text-center">Government</th>
@@ -151,7 +234,7 @@
     {% for i in dl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/4">{{i.district_name}}</a></td>
+                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/4/1/">{{i.district_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.district == i.id and j.chk_dept == 1 %}
@@ -267,7 +350,7 @@
 </div>
 
 <div id="dee_rep" name="dee_rep" class="form-group" style="visibility:hide"> 
-<center><h2> School Profile - Academicinfo Information Entry - Status Report</h2></center>
+<center><h2> School Profile - Infrastructure Information Details Entry - Status Report</h2></center>
 
 
                   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
@@ -276,7 +359,7 @@
                         
                         <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">DISTRICT</th>
                         <th width=5% rowspan="2" style="vertical-align:middle;"  class="text-center">D.E.E. - No. of Schools</th>
-                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Academicinfo Information (Management-wise)</th>
+                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Infrastructure Information Details (Management-wise)</th>
                       </tr>
                       <tr>  
                         <th width=5% class="text-center">Government</th>
@@ -287,7 +370,7 @@
     {% for i in dl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/2">{{i.district_name}}</a></td>
+                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/2/1/">{{i.district_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.district == i.id and j.chk_dept == 2 %}
@@ -367,7 +450,7 @@
 
  <div id="dms_rep" name="dms_rep" class="form-group" style="visibility:hide">
 
-<center><h2> School Profile - Academicinfo Information Entry - Status Report</h2></center>
+<center><h2> School Profile - Infrastructure Information Details Entry - Status Report</h2></center>
 
 
                   <table class='table table-bordered table-striped2' border="2" align="center" cellspacing="0">
@@ -375,7 +458,7 @@
                         
                         <th width=15% rowspan="2" style="vertical-align:middle;" class="text-center">DISTRICT</th>
                         <th width=5% rowspan="2" style="vertical-align:middle;"  class="text-center">D.M.S. - No. of Schools</th>
-                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Academicinfo Information (Management-wise)</th>
+                        <th width=5% colspan="4"  class="text-center">No. of Schools Entered Infrastructure Information Details (Management-wise)</th>
                       </tr>
                       <tr>  
                         <th width=5% class="text-center">Government</th>
@@ -386,7 +469,7 @@
     {% for i in dl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/3">{{i.district_name}}</a></td>
+                        <td><a href="/schoolnew/sch_dist_repii/{{i.id}}/3/1/">{{i.district_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.district == i.id and j.chk_dept == 3 %}

@@ -105,7 +105,7 @@ color:red;
 
 <td>{{ i.teacherid.name | upper }}</td>
 <td>{{ i.teacherid.count }}</td>
-<td> {{i.effective_date}}</td> 
+<td> {{i.effective_date  |date:"d-m-Y"}}</td> 
 <td> {{i.no_of_days_credit }}</td> 
 </tr>
 {% endfor %}
@@ -120,7 +120,7 @@ color:red;
  <td>{{forloop.counter}}</td>  
 <td>{{ i.teacherid.name | upper }}</td>
 <td>{{ i.teacherid.count }}</td>
-<td> {{i.effective_date}}</td> 
+<td> {{i.effective_date  |date:"d-m-Y"}}</td> 
 <td> {{i.no_of_days_credit }}</td> 
 </tr>
 

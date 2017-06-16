@@ -81,7 +81,7 @@
                     stab_cer_no: {
                         required:true                     
                     },
-                    stab_cer_date: {
+                    stab_cer_dt: {
                         required:true                   
                     },                                             
                 },
@@ -106,7 +106,7 @@
                     stab_cer_no: {
                         required: "Stability certificate details required. (Govt. School pl. give as Govt. building)"
                     },  
-                    stab_cer_date: {
+                    stab_cer_dt: {
                         required: "Stability certificate date required."
                     },             
                 },
@@ -154,6 +154,40 @@
             }
         }
     </script>
+
+<script type="text/javascript">
+function date_future_chk(inpid)
+{
+   var go_date = document.getElementById(inpid).value;
+   var today = new Date(); 
+      
+
+   if(go_date != "" )
+   {
+      
+       var record_day1=go_date.split("/");  
+       var sum1=record_day1[2]+'/'+record_day1[1]+'/'+record_day1[0];
+       // var record_day2=prob_date.split("/");  
+       // var sum2=record_day2[2]+'/'+record_day2[1]+'/'+record_day2[0];
+       var go_dt=new Date(sum1);    
+       // var probation_date=new Date(sum2); 
+       
+      
+       
+       if(go_dt > today)
+       {
+           alert("Pl. Enter correct date, future date can not be entered ");
+           document.getElementById(inpid).focus();
+           document.getElementById(inpid).value="";
+           inpid.style.backgroundColor = "MistyRose";
+           
+       }
+        else
+       {document.getElementById(inpid).style.background = 'none';}
+   }
+   return false; 
+}
+</script>
 
 <script type="text/javascript">
 
@@ -238,12 +272,12 @@ Details of Building Abstract </h3></center>
 <div class="form-group"> <b>{% trans "Details of Building Stability Certificate No.:" %}</b><input type="text" class="form-control" class="form-control mandatory" id="stab_cer_no" name="stab_cer_no" value="{{stab_cer_no}}" maxlength="20" /></div>
 <span class="error_message">{{form.stab_cer_no.errors}}</span>
 
-<div class="form-group" style="visibility:hide" id='hssrecog_fm'> <b>{% trans "Stability Certificate Date:" %}</b>
+<div class="form-group" style="visibility:hide" id='stab_cer_dt'> <b>{% trans "Stability Certificate Date:" %}</b>
      <div class="input-group">
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="stab_cer_dt" id="stab_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.stab_cer_dt.value|date:"d/m/Y"  }}" maxlength="10" > 
+<input class="form-control"   name="stab_cer_dt" id="stab_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.stab_cer_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('stab_cer_dt')"  maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.stab_cer_dt.errors}}</span>
 
@@ -252,7 +286,7 @@ Details of Building Abstract </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="stab_fm_dt" id="stab_fm_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.stab_fm_dt.value|date:"d/m/Y"  }}"  maxlength="10"> 
+<input class="form-control"   name="stab_fm_dt" id="stab_fm_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.stab_fm_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('stab_fm_dt')" maxlength="10"> 
     </div></div>
     <span class="error_message">{{form.stab_fm_dt.errors}}</span>
 
@@ -281,7 +315,7 @@ Details of Building Abstract </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="lic_cer_dt" id="lic_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.lic_cer_dt.value|date:"d/m/Y"  }}"  maxlength="10"> 
+<input class="form-control"   name="lic_cer_dt" id="lic_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.lic_cer_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('lic_cer_dt')" maxlength="10"> 
     </div></div>
     <span class="error_message">{{form.lic_cer_dt.errors}}</span>
 
@@ -297,7 +331,7 @@ Details of Building Abstract </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="san_cer_dt" id="san_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.san_cer_dt.value|date:"d/m/Y"  }}" maxlength="10" > 
+<input class="form-control"   name="san_cer_dt" id="san_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.san_cer_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('san_cer_dt')" maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.san_cer_dt.errors}}</span>
 
@@ -313,12 +347,12 @@ Details of Building Abstract </h3></center>
        <div class="input-group-addon">
            <i class="fa fa-calendar"></i>
        </div>
-<input class="form-control"   name="fire_cer_dt" id="fire_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.fire_cer_dt.value|date:"d/m/Y"  }}" maxlength="10" > 
+<input class="form-control"   name="fire_cer_dt" id="fire_cer_dt" type="text" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" value="{{form.fire_cer_dt.value|date:"d/m/Y"  }}" onblur="date_future_chk('fire_cer_dt')" maxlength="10" > 
     </div></div>
     <span class="error_message">{{form.fire_cer_dt.errors}}</span>
 
 
-<div class="form-group"> <b>{% trans "Name / Designation of the Officer issued the   Fire Certificate:" %}</b><input type="text" class="form-control" class="form-control mandatory" id="fire_iss_auth" name="fire_iss_auth" value="{{fire_iss_auth}}" maxlength="100" /></div>
+<div class="form-group"> <b>{% trans "Name / Designation of the Officer issued the Fire Certificate:" %}</b><input type="text" class="form-control" class="form-control mandatory" id="fire_iss_auth" name="fire_iss_auth" value="{{fire_iss_auth}}" maxlength="100" /></div>
 <span class="error_message" >{{form.fire_iss_auth.errors}}</span>
     
 {% endif %}
@@ -364,7 +398,7 @@ Details of Building Abstract </h3></center>
 {% if gov_chk %}
 {% else %}        
         <td > {{ i.stab_cer_no |upper}}</td>
-        <td > {{ i.stab_cer_date |upper}}</td>
+        <td > {{ i.stab_cer_dt |upper}}</td>
 
 {% endif %}        
         <td style="text-align:center;"><a href="/schoolnew/buildabs_update/{{i.id}}"><input type="button" class="btn btn-info" value="Update"></a></td>

@@ -155,8 +155,13 @@ $(document).ready(function(){
 <div class="form-group"> <b>{% trans "No. of Equipments in working Condition:" %}</b><input type="number" class="form-control" class="form-control mandatory" id="working_no" name="working_no" value="{{working_no}}" maxlength="3" /></div><span class="error_message">{{form.working_no.errors}}</span>
 
 
+{% if not_working_no %}
 <div class="form-group"> <b>{% trans "No. of Equipments not in working Condition:" %}</b><input type="number" class="form-control" class="form-control mandatory" id="not_working_no" name="not_working_no" value="{{not_working_no}}"  maxlength="3"/></div><span class="error_message">{{form.not_working_no.errors}}</span>
 
+{% else %}
+<div class="form-group"> <b>{% trans "No. of Equipments not in working Condition:" %}</b><input type="number" class="form-control" class="form-control mandatory" id="not_working_no" name="not_working_no" value="0"  maxlength="3"/></div><span class="error_message">{{form.not_working_no.errors}}</span>
+
+{% endif %}
 
 <div class="form-group"> <b>{% trans "ICT Equipment Supplied by:" %}</b>
     <select id='supplied_by' name="supplied_by"  class="form-control mandatory" onchange="get_donor();" onblur="get_donor()"; >

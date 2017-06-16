@@ -24,28 +24,39 @@ class Teacher_relinquis_create(View):
                 AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)
             form=Teacher_relinquisform()       
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)  
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count           
-            posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
-            designation_list=User_desig.objects.all()
-        
-         
-            if posting_desg.count()==0:
-                msg = " First make entries in Posting"
-                messages.warning(request, msg)
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count           
+                posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
+                designation_list=User_desig.objects.all()
+            
+             
+                if posting_desg.count()==0:
+                    msg = " First make entries in Posting"
+                    messages.warning(request, msg)
+                    return redirect('teacher_personnel_entry_after',pk=tid)
+                         
+                edu_list = Teacher_relinquish_entry.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0:
+                    messages.success(request, 'No Data') 
+                    
+                return render(request,'teachers/post_relinquish/teacher_post_relinquish_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
                 return redirect('teacher_personnel_entry_after',pk=tid)
-                     
-            edu_list = Teacher_relinquish_entry.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request, 'No Data') 
-                
-            return render(request,'teachers/post_relinquish/teacher_post_relinquish_form.html',locals())
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -90,24 +101,43 @@ class teacher_relinqui_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid)          
+               
             dategovt=staff_id.dofsed
             staff_name=staff_id.name
             staff_uid=staff_id.count     
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id
-            posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
-            designation_list=User_desig.objects.all()    
-            instance=Teacher_relinquish_entry.objects.get(id=pk1)
-            form = Teacher_relinquisform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            current_designation = instance.current_designation
-            promoted_to=instance.promoted_to
-            date_of_relinqui =instance.date_of_relinqui   
-            order_no=instance.order_no
-            crucial_date_for_promotion = instance.crucial_date_for_promotion 
-            promo_next_eligible_date = instance.promo_next_eligible_date   
-            return render(request,'teachers/post_relinquish/teacher_post_relinquish_form.html',locals())
+            
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
+                designation_list=User_desig.objects.all()    
+                if(Teacher_relinquish_entry.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_relinquish_entry.objects.get(id=pk1,teacherid_id=tid)
+                    form = Teacher_relinquisform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    current_designation = instance.current_designation
+                    promoted_to=instance.promoted_to
+                    date_of_relinqui =instance.date_of_relinqui   
+                    order_no=instance.order_no
+                    crucial_date_for_promotion = instance.crucial_date_for_promotion 
+                    promo_next_eligible_date = instance.promo_next_eligible_date   
+                    return render(request,'teachers/post_relinquish/teacher_post_relinquish_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     

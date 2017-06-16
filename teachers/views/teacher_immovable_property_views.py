@@ -51,17 +51,29 @@ class Teacher_immovable_property_create(View):
         if request.user.is_authenticated():
             form=Teacher_immovalble_propertyform()
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)  
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            school_id =staff_id.school_id               
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count    
-            
-            edu_list = Teacher_immovalble_property.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request, 'No Data')
-            return render(request,'teachers/immovable/teacher_immovable_property_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+               
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count    
+                
+                edu_list = Teacher_immovalble_property.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0:
+                   messages.success(request, 'No Data')
+                return render(request,'teachers/immovable/teacher_immovable_property_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -115,26 +127,41 @@ class teacher_immovable_update(View):
             # school_id = request.user.account.associated_with
             tid=self.kwargs.get('pk')
             pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid)    
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-                
-            school_id =staff_id.school_id             
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count    
-            instance=Teacher_immovalble_property.objects.get(id=pk1)
-            form = Teacher_immovalble_propertyform(instance=instance)
-            teacherid_id = instance.teacherid_id
-            prop_description = instance.prop_description
-            purchase_value=instance.purchase_value
-            acquired_source = instance.acquired_source  
-            doc_number =instance.doc_number
-            doc_date = instance.doc_date
-            place=instance.place
-            order_no=instance.order_no
-            present_value = instance.present_value  
-            order_date =instance.order_date            
-            return render(request,'teachers/immovable/teacher_immovable_property_form.html',locals())
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+       
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count    
+                if(Teacher_immovalble_property.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_immovalble_property.objects.get(id=pk1,teacherid_id=tid)
+                    form = Teacher_immovalble_propertyform(instance=instance)
+                    teacherid_id = instance.teacherid_id
+                    prop_description = instance.prop_description
+                    purchase_value=instance.purchase_value
+                    acquired_source = instance.acquired_source  
+                    doc_number =instance.doc_number
+                    doc_date = instance.doc_date
+                    place=instance.place
+                    order_no=instance.order_no
+                    present_value = instance.present_value  
+                    order_date =instance.order_date            
+                    return render(request,'teachers/immovable/teacher_immovable_property_form.html',locals())
+                else:
+                    messages.success(request, 'Record Does not Exist')
+                    return HttpResponseRedirect('/')
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

@@ -27,116 +27,127 @@ class leave_master_view(View):
 
             fam=Teacher_family_detail.objects.filter(teacherid_id=tid)    
 
-            data=Teacher_detail.objects.get(id=tid)
-            basic_det=Basicinfo.objects.get(school_id=data.school_id)
-            school_id =data.school_id   
-            doj=data.dofsed
-            desig1=data.designation
-            desig_id=User_desig.objects.get(user_desig=desig1)
-            desig=desig_id.ser_type
-
-            doregular=data.doregu
-                    
-            import datetime
-            today = datetime.date.today()
-            years_of_exp=(today-doj).days/365.25
-            if desig==0:
-                if years_of_exp<2:
-                    eligible_days=0
-                elif years_of_exp>=2 and years_of_exp<5:
-                    eligible_days=90
-                elif years_of_exp>=5 and years_of_exp<10:
-                    eligible_days=180
-                elif years_of_exp>=10 and years_of_exp<15:
-                    eligible_days=270
-                elif years_of_exp>=15 and years_of_exp<20:
-                    eligible_days=360
-                elif years_of_exp>=20:
-                    eligible_days=540
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                data = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
             else:
-                years_of_exp=(today-doregular).days/365.25
-                if years_of_exp<1:
-                    eligible_days=0
-                elif years_of_exp>=1 and years_of_exp<15:
-                    eligible_days=(int(years_of_exp)*10)
-                elif years_of_exp>=15 and years_of_exp<20:
-                    eligible_days=360
-                
-                elif years_of_exp>=20:
-                    eligible_days=540
-            
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            uel_mc_ob1=eligible_days
-            
-            if desig==0:
-                if years_of_exp>2:
-                    eligible_days=0
-                else:
-                    eligible_days=0
-            else:
-                years_of_exp=(today-doregular).days/365.25
-                if years_of_exp<15:
-                    eligible_days=180
-                elif years_of_exp>=15:
-                    eligible_days=365
-                 
-            llp_womc_ob1=eligible_days
 
-            if desig==0:
-                years_of_exp=(today-doj).days/365.25
-                if years_of_exp<10:
-                    eligible_days=90
-                else:
-                    eligible_days=180
-               
-            else:
-                years_of_exp=(today-doregular).days/365.25
-                if years_of_exp<15:
-                    eligible_days=0
-                elif years_of_exp>=15:
-                    eligible_days=180
-                
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+                doj=data.dofsed
+                desig1=data.designation
+                desig_id=User_desig.objects.get(user_desig=desig1)
+                desig=desig_id.ser_type
 
-            uel_pa_ob1=eligible_days
-           
-            gender=data.gender
-            if gender=='Male':
-                maternity_leave_ob1=0
-            else:
-                fam_details=Teacher_family_detail.objects.filter(teacherid_id=unique_id)
-                child_count=0
-
+                doregular=data.doregu
+                        
                 import datetime
-                            
-                for i in fam_details:
-                    if i.relation.id==2 or i.relation.id==3:
-                        child_count=child_count+1
-                if child_count>=2:
-                    maternity_leave_ob1=child_count+1
-                elif child_count<2:
-                    maternity_leave_ob1=child_count+1
-                maternity_leave_ob1=maternity_leave_ob1-1
-            
-            if fam.count()>0:
-                try:
-                    records=Teacher_leave_master.objects.filter(teacherid_id=tid)    
-                    if records.count()>0:
-                        return HttpResponseRedirect('/teachers/master_db_update/%d/' %int(tid))
-
-                    else:        
-                        return render(request,'teachers/leave_credit/teacher_leave_credit_form.html',locals())
+                today = datetime.date.today()
+                years_of_exp=(today-doj).days/365.25
+                if desig==0:
+                    if years_of_exp<2:
+                        eligible_days=0
+                    elif years_of_exp>=2 and years_of_exp<5:
+                        eligible_days=90
+                    elif years_of_exp>=5 and years_of_exp<10:
+                        eligible_days=180
+                    elif years_of_exp>=10 and years_of_exp<15:
+                        eligible_days=270
+                    elif years_of_exp>=15 and years_of_exp<20:
+                        eligible_days=360
+                    elif years_of_exp>=20:
+                        eligible_days=540
+                else:
+                    years_of_exp=(today-doregular).days/365.25
+                    if years_of_exp<1:
+                        eligible_days=0
+                    elif years_of_exp>=1 and years_of_exp<15:
+                        eligible_days=(int(years_of_exp)*10)
+                    elif years_of_exp>=15 and years_of_exp<20:
+                        eligible_days=360
                     
-                except:
-                    msg = " Make Leave Master "
+                    elif years_of_exp>=20:
+                        eligible_days=540
+                
+
+                uel_mc_ob1=eligible_days
+                
+                if desig==0:
+                    if years_of_exp>2:
+                        eligible_days=0
+                    else:
+                        eligible_days=0
+                else:
+                    years_of_exp=(today-doregular).days/365.25
+                    if years_of_exp<15:
+                        eligible_days=180
+                    elif years_of_exp>=15:
+                        eligible_days=365
+                     
+                llp_womc_ob1=eligible_days
+
+                if desig==0:
+                    years_of_exp=(today-doj).days/365.25
+                    if years_of_exp<10:
+                        eligible_days=90
+                    else:
+                        eligible_days=180
+                   
+                else:
+                    years_of_exp=(today-doregular).days/365.25
+                    if years_of_exp<15:
+                        eligible_days=0
+                    elif years_of_exp>=15:
+                        eligible_days=180
+                    
+
+                uel_pa_ob1=eligible_days
+               
+                gender=data.gender
+                if gender=='Male':
+                    maternity_leave_ob1=0
+                else:
+                    fam_details=Teacher_family_detail.objects.filter(teacherid_id=unique_id)
+                    child_count=0
+
+                    import datetime
+                                
+                    for i in fam_details:
+                        if i.relation.id==2 or i.relation.id==3:
+                            child_count=child_count+1
+                    if child_count>=2:
+                        maternity_leave_ob1=child_count+1
+                    elif child_count<2:
+                        maternity_leave_ob1=child_count+1
+                    maternity_leave_ob1=maternity_leave_ob1-1
+                
+                if fam.count()>0:
+                    try:
+                        records=Teacher_leave_master.objects.filter(teacherid_id=tid)    
+                        if records.count()>0:
+                            return HttpResponseRedirect('/teachers/master_db_update/%d/' %int(tid))
+
+                        else:        
+                            return render(request,'teachers/leave_credit/teacher_leave_credit_form.html',locals())
+                        
+                    except:
+                        msg = " Make Leave Master "
+                        messages.warning(request, msg)
+                        return redirect('teacher_personnel_entry_after',pk=tid)
+
+                else :
+                    msg = " Make Teacher's Family Details First "
                     messages.warning(request, msg)
                     return redirect('teacher_personnel_entry_after',pk=tid)
 
-            else :
-                msg = " Make Teacher's Family Details First "
-                messages.warning(request, msg)
+                return HttpResponseRedirect('/teachers/teacher_personnel_entry_after/%d/' %int(tid))
+            else:
+                messages.success(request, 'you cannot view other records')
                 return redirect('teacher_personnel_entry_after',pk=tid)
-
-            return HttpResponseRedirect('/teachers/teacher_personnel_entry_after/%d/' %int(tid))
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -213,36 +224,46 @@ class master_db_update(View):
             
             form = Teacher_leave_masterform(instance=instance)
 
-            unique_id=Teacher_detail.objects.get(id=tid)
-            basic_det=Basicinfo.objects.get(school_id=unique_id.school_id)
-                
-            school_id =unique_id.school_id   
-     
-            teacherid_id = instance.teacherid_id
-            
-            el_ob = instance.el_ob
-            el_taken = instance.el_taken
-            el_bal=instance.el_bal
-            uel_mc_ob = instance.uel_mc_ob  
-            uel_mc_taken =instance.uel_mc_taken 
-            uel_mc_bal = instance.uel_mc_bal
-            llp_mc_ob = instance.llp_mc_ob
-            llp_mc_taken=instance.llp_mc_taken
-            llp_mc_bal = instance.llp_mc_bal  
-            uel_pa_ob =instance.uel_pa_ob 
-            uel_pa_taken = instance.uel_pa_taken
-            uel_pa_bal = instance.uel_pa_bal
-            llp_womc_ob=instance.llp_womc_ob
-            llp_womc_taken = instance.llp_womc_taken  
-            llp_womc_bal =instance.llp_womc_bal 
-            spl_leave_ob = instance.spl_leave_ob
-            spl_leave_taken = instance.spl_leave_taken
-            spl_leave_bal=instance.spl_leave_bal
-            maternity_leave_ob = instance.maternity_leave_ob  
-            maternity_leave_taken =instance.maternity_leave_taken 
-            maternity_leave_bal =instance.maternity_leave_bal 
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                unique_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            return render(request,'teachers/leave_credit/teacher_leave_credit_form.html',locals())
+
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+     
+                teacherid_id = instance.teacherid_id
+                
+                el_ob = instance.el_ob
+                el_taken = instance.el_taken
+                el_bal=instance.el_bal
+                uel_mc_ob = instance.uel_mc_ob  
+                uel_mc_taken =instance.uel_mc_taken 
+                uel_mc_bal = instance.uel_mc_bal
+                llp_mc_ob = instance.llp_mc_ob
+                llp_mc_taken=instance.llp_mc_taken
+                llp_mc_bal = instance.llp_mc_bal  
+                uel_pa_ob =instance.uel_pa_ob 
+                uel_pa_taken = instance.uel_pa_taken
+                uel_pa_bal = instance.uel_pa_bal
+                llp_womc_ob=instance.llp_womc_ob
+                llp_womc_taken = instance.llp_womc_taken  
+                llp_womc_bal =instance.llp_womc_bal 
+                spl_leave_ob = instance.spl_leave_ob
+                spl_leave_taken = instance.spl_leave_taken
+                spl_leave_bal=instance.spl_leave_bal
+                maternity_leave_ob = instance.maternity_leave_ob  
+                maternity_leave_taken =instance.maternity_leave_taken 
+                maternity_leave_bal =instance.maternity_leave_bal 
+
+                return render(request,'teachers/leave_credit/teacher_leave_credit_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -256,26 +277,36 @@ class Teacher_leave_credit_create(View):
             form=Teacher_leave_creditform()
             tid=self.kwargs.get('pk')
             
-            unique_id=Teacher_detail.objects.get(id=tid)
-            basic_det=Basicinfo.objects.get(school_id=unique_id.school_id)
-                
-            school_id =unique_id.school_id   
-     
-            try:
-                record=Teacher_leave_master.objects.get(teacherid_id=tid)
-                el_ob=int(record.el_ob)
-                el_taken=record.el_taken
-                el_bal=record.el_bal
-            except:
-                msg = " First Make Leave Master "
-                messages.warning(request, msg)
-                return redirect('teacher_personnel_entry_after',pk=tid)
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                unique_id = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            edu_list = Teacher_leave_credit.objects.filter(teacherid_id=tid)
-            if edu_list.count()==0:
-                messages.success(request,'No Data')    
-            
-            return render(request,'teachers/leave_credit/teacher_leave_credit_form3.html',locals())
+
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+     
+                try:
+                    record=Teacher_leave_master.objects.get(teacherid_id=tid)
+                    el_ob=int(record.el_ob)
+                    el_taken=record.el_taken
+                    el_bal=record.el_bal
+                except:
+                    msg = " First Make Leave Master "
+                    messages.warning(request, msg)
+                    return redirect('teacher_personnel_entry_after',pk=tid)
+
+                edu_list = Teacher_leave_credit.objects.filter(teacherid_id=tid)
+                if edu_list.count()==0:
+                    messages.success(request,'No Data')    
+                
+                return render(request,'teachers/leave_credit/teacher_leave_credit_form3.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -353,23 +384,36 @@ class teacher_leave_credit_update(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             tid1=self.kwargs.get('pk1')
-            unique_id=Teacher_detail.objects.get(id=tid)  
-            basic_det=Basicinfo.objects.get(school_id=unique_id.school_id)
-                
-            school_id =unique_id.school_id   
-     
-            
-            instance=Teacher_leave_credit.objects.get(id=tid1)
-            
-            form=Teacher_leave_creditform(instance=instance)
-            edu_list = Teacher_leave_credit.objects.filter(teacherid_id=tid1)
-            teacherid_id = instance.teacherid_id
-            leave_type = instance.leave_type
-            effective_date = instance.effective_date
-            no_of_days_credit = instance.no_of_days_credit
-            previous_balance = instance.previous_balance
-            current_balance = instance.current_balance
-            return render(request,'teachers/leave_credit/teacher_leave_credit_form3.html',locals()) 
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                unique_id = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =unique_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+                if(Teacher_leave_credit.objects.filter(id=tid1)).count()>0:
+                    instance=Teacher_leave_credit.objects.get(id=tid1)
+                    
+                    form=Teacher_leave_creditform(instance=instance)
+                    edu_list = Teacher_leave_credit.objects.filter(teacherid_id=tid1)
+                    teacherid_id = instance.teacherid_id
+                    leave_type = instance.leave_type
+                    effective_date = instance.effective_date
+                    no_of_days_credit = instance.no_of_days_credit
+                    previous_balance = instance.previous_balance
+                    current_balance = instance.current_balance
+                    return render(request,'teachers/leave_credit/teacher_leave_credit_form3.html',locals()) 
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

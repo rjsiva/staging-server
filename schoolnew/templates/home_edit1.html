@@ -32,15 +32,15 @@ function formattedDate(date) {
 </script>
 
 <!-- {% cache 20 sidebar %} -->
- 
+ <!-- 
 <a  class="btn btn-large btn-success" href='/schoolnew/printpdf/{{basic_det.id}}'>Print PDF</a>
-<!-- <a  class="btn btn-large btn-success" href='/schoolnew/sch_state_rep/'>State Report</a> -->
+ old report <a  class="btn btn-large btn-success" href='/schoolnew/sch_state_rep/'>State Report</a> 
 <a  class="btn btn-large btn-success" href='/schoolnew/sch_state_abs/'>State Abstract</a>
 
 <a  class="btn btn-large btn-success" href='/schoolnew/sch_dist_abs/{{basic_det.district_id}}'>District Abstract</a>
 
 
-<a  class="btn btn-large btn-success" href='/schoolnew/sch_block_abs/{{basic_det.block_id}}'>Block Abstract</a>
+<a  class="btn btn-large btn-success" href='/schoolnew/sch_block_abs/{{basic_det.block_id}}'>Block Abstract</a> -->
 
 <center><font size="5" color="blue">SCHOOL  PROFILE</font></center>
 
@@ -78,7 +78,7 @@ function formattedDate(date) {
         <a href="/schoolnew/admin_edit/">Update the Existing Entry</a>
         {% else %}      
         {% if basic_det.manage_cate_id %} 
-        <a href="/schoolnew/admin_entry/">Make New Entries</a>
+        <a href="/schoolnew/admin_edit/">Make New Entries</a>
         {% else %}  
          First Update Entries in Basic Details
         {% endif %}         
@@ -150,8 +150,11 @@ function formattedDate(date) {
    </td>
 
     </tr>
-    
-{% if grp_chk %}    
+ 
+
+{% if grp_chk %}
+{% if cbsechk %}
+{% else %}
     <tr>
 
      
@@ -188,7 +191,7 @@ function formattedDate(date) {
 
     </tr>
 {% endif %}
-
+{% endif %}
     
 {% if govaid_ent %} 
 
@@ -269,6 +272,7 @@ function formattedDate(date) {
        {% endif %}
         </tr>
 
+{% if govaid_ent %} 
         <tr>
           
 
@@ -304,7 +308,7 @@ function formattedDate(date) {
 
       </td>
         </tr>
-        
+{% endif %}        
         <tr>
                 
         <!-- <td height="50">4</td> -->

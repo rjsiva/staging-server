@@ -26,17 +26,29 @@ class Teacher_family_create(View):
       relation1=family_relationship.objects.all()
       district_list = District.objects.all().order_by('district_name')
       tid=self.kwargs.get('pk')        
-      staff_id = Teacher_detail.objects.get(id = tid)  
-      basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-              
-      school_id =staff_id.school_id    
-      staff_name=staff_id.name
-      staff_uid=staff_id.count     
-      edu_list = Teacher_family_detail.objects.filter(teacherid_id=tid) 
-     
-      if edu_list.count()==0: 
-         messages.success(request, 'No Data') 
-      return render(request,'teachers/family/teacher_family_detail_form.html',locals())
+      if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+      else:
+          messages.info(request,'Teacher DoesNotExist')
+          return HttpResponseRedirect('/')
+
+
+      school_id =staff_id.school_id 
+      basic_det=Basicinfo.objects.get(school_id=school_id)
+ 
+      if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+        
+        
+        staff_name=staff_id.name
+        staff_uid=staff_id.count     
+        edu_list = Teacher_family_detail.objects.filter(teacherid_id=tid) 
+       
+        if edu_list.count()==0: 
+           messages.success(request, 'No Data') 
+        return render(request,'teachers/family/teacher_family_detail_form.html',locals())
+      else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
     else:
       return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -101,41 +113,58 @@ class teacher_family_update(View):
     if request.user.is_authenticated():
       tid=self.kwargs.get('pk')
       pk1=self.kwargs.get('pk1')
-      staff_id = Teacher_detail.objects.get(id = tid)          
-      basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-          
-      school_id =staff_id.school_id
-      staff_uid=staff_id.count     
-      staff_name=staff_id.name
+      if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+          staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+      else:
+          messages.info(request,'Teacher DoesNotExist')
+          return HttpResponseRedirect('/')
 
-      instance=Teacher_family_detail.objects.get(id=pk1)
-      
-      relation1=family_relationship.objects.all()
-      form = Teacher_family_detailform(instance=instance)
-      teacherid_id = instance.teacherid_id
-      name = instance.name
-      dob=instance.dob
-      age = instance.age 
-      aadhaar_number= instance.aadhaar_number
-      spou_gov=instance.spou_gov
-      district= instance.district
-      block= instance.block
-      local_body_type= instance.local_body_type
-      village_panchayat= instance.village_panchayat
-      vill_habitation= instance.vill_habitation
-      town_panchayat= instance.town_panchayat
-      town_panchayat_ward= instance.town_panchayat_ward
-      municipality= instance.municipality
-      municipal_ward= instance.municipal_ward
-      contonment= instance.contonment
-      contonment_ward= instance.contonment_ward
-      township= instance.township
-      township_ward= instance.township_ward
-      corporation= instance.corporation
-      corpn_zone= instance.corpn_zone
-      corpn_ward= instance.corpn_ward
-      relation = instance.relation  
-      return render(request,'teachers/family/teacher_family_detail_form.html',locals())
+
+      school_id =staff_id.school_id 
+      basic_det=Basicinfo.objects.get(school_id=school_id)
+ 
+      if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+        staff_uid=staff_id.count     
+        staff_name=staff_id.name
+        if (Teacher_family_detail.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+            instance=Teacher_family_detail.objects.get(id=pk1,teacherid_id=tid)
+
+        
+            relation1=family_relationship.objects.all()
+            form = Teacher_family_detailform(instance=instance)
+            teacherid_id = instance.teacherid_id
+            name = instance.name
+            dob=instance.dob
+            age = instance.age 
+            aadhaar_number= instance.aadhaar_number
+            spou_gov=instance.spou_gov
+            district= instance.district
+            block= instance.block
+            local_body_type= instance.local_body_type
+            village_panchayat= instance.village_panchayat
+            vill_habitation= instance.vill_habitation
+            town_panchayat= instance.town_panchayat
+            town_panchayat_ward= instance.town_panchayat_ward
+            municipality= instance.municipality
+            municipal_ward= instance.municipal_ward
+            contonment= instance.contonment
+            contonment_ward= instance.contonment_ward
+            township= instance.township
+            township_ward= instance.township_ward
+            corporation= instance.corporation
+            corpn_zone= instance.corpn_zone
+            corpn_ward= instance.corpn_ward
+            relation = instance.relation  
+            return render(request,'teachers/family/teacher_family_detail_form.html',locals())
+        else:
+          messages.info(request,'Record DoesNotExist')
+          return HttpResponseRedirect('/')
+
+      else:
+
+          messages.success(request, 'you cannot view other records')
+          return redirect('teacher_personnel_entry_after',pk=tid)
     else:
       return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

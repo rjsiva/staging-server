@@ -407,10 +407,10 @@ maxlength="10"  /></div>
         <td> <a href="/teachers/teacher_full_detail/{{i.teacherid_id}}"style="text-decoration: none">{{ unique_id.name | upper }} </td> 
 
         <td> {{ i.leave_type }}</td> 
-        <td> {{ i.leave_from }}</td> 
-        <td> {{ i.leave_to }}</td> 
+        <td> {{ i.leave_from  |date:"d-m-Y"}}</td> 
+        <td> {{ i.leave_to  |date:"d-m-Y"}}</td> 
         <td> {{ i.order_no }}</td> 
-        <td> {{ i.order_date }}</td> 
+        <td> {{ i.order_date  |date:"d-m-Y"}}</td> 
      
 
          <td><a href="/teachers/teacher_leave_update/{{tid}}/{{i.id}}"><!-- <button type="button" class="btn btn-warning">Update</button></a></td>

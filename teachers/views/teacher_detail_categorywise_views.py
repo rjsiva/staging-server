@@ -20,7 +20,7 @@ class teacher_detailListView(View):
                 udise_code= request.user.username
                 cat_id = self.kwargs.get('cat_id')
                 school_code=cat_id
-
+                print 'request.user.account.user_category_id',request.user.account.user_category_id
                 offcat_id_list=[2,3,4,5,6,7,8,9,10,11]
                 management_cate_id_list=[1,2]
                 management_id_list=[1,2,3]
@@ -45,7 +45,6 @@ class teacher_detailListView(View):
                 check2=0
                 check3=0
                 check4=0
-         
                 school_entry=1
                 if request.user.account.user_category_id == 2:
                     teachers_name_list_new = Teacher_detail.objects.filter(school__school_code=school_code, school__block_id= request.user.account.associated_with)
@@ -99,7 +98,7 @@ class teacher_detailListView(View):
                                 return HttpResponseRedirect('/') 
                             rec1 = Staff.objects.filter(school_key=sch_key)
                             
-                            filled_check = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(transfer_flag='No').filter(ofs_flag=False)    
+                            # filled_check = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(transfer_flag='No').filter(ofs_flag=False)    
                             teaching_sanc=0
                             teaching_filled=0
                             teaching_vac=0

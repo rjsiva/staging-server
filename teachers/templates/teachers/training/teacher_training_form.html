@@ -305,8 +305,8 @@ DETAILS OF INSERVICE TRAINING ATTENDED</h5></center>
         <td> {{ i.institution|upper }}</td> 
         <td> {{ i.city|upper }}</td> 
         <td> {{ i.country|upper }}</td> 
-        <td> {{ i.duration_from }}</td> 
-        <td> {{ i.duration_to }}</td> 
+        <td> {{ i.duration_from   |date:"d-m-Y"}}</td> 
+        <td> {{ i.duration_to  |date:"d-m-Y"}}</td> 
 
        
         <td><a href="/teachers/teacher_training_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td>

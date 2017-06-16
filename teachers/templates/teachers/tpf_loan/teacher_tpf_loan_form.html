@@ -376,9 +376,9 @@ DETAILS OF GPF / TPF LOAN</h5></center>
         <td> {{ i.sanctioned_amt }}</td> 
         <td> {{ i.installments }}</td> 
         <td> {{ i.monthly_installment }}</td> 
-        <td> {{ i.first_insta_date }}</td> 
+        <td> {{ i.first_insta_date  |date:"d-m-Y" }}</td> 
         <td> {{ i.sanctioned_order }}</td> 
-        <td> {{ i.sanctioned_date }}</td> 
+        <td> {{ i.sanctioned_date  |date:"d-m-Y"}}</td> 
 
         <td><a href="/teachers/teacher_tpf_loan_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td> 
      

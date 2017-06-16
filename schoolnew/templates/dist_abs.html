@@ -849,7 +849,752 @@
         {% endif %}  
 {% endfor %}
 
-<td align="right"> {{ntpgrtot.post_sanc__sum}}</td>
+<td align="right"> {{ntpgrtot.staff__post_sanc__sum}}</td>
+
+ </tr>
+
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repld/">No. of Schools Entered Land Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in ldtotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in ldtotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in ldtotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in ldstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.ld_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in ldtotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in ldtotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in ldtotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.ld_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in ldstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.ld_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in ldtotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.ld_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{ldgrtot}}</td>
+
+ </tr>
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repbd/">No. of Schools Entered Building Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in bdtotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in bdtotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in bdtotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in bdstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.bd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in bdtotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in bdtotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in bdtotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.bd_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in bdstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.bd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in bdtotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.bd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{bdgrtot}}</td>
+
+ </tr>
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repbad/">No. of Schools Entered Building Abstract Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in badtotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in badtotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in badtotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in badstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.bad_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in badtotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in badtotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in badtotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.bad_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in badstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.bad_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in badtotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.bad_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{badgrtot}}</td>
+
+ </tr>
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repsd/">No. of Schools Entered Sports Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in sdtotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in sdtotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in sdtotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in sdstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.sd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in sdtotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in sdtotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in sdtotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.sd_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in sdstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.sd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in sdtotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.sd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{sdgrtot}}</td>
+
+ </tr>
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repict/">No. of Schools Entered ICT Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in icttotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in icttotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in icttotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in ictstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.ict_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in icttotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in icttotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in icttotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.ict_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in ictstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.ict_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in icttotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.ict_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{ictgrtot}}</td>
+
+ </tr>
+
+<tr>
+<td ><a href="/schoolnew/sch_dist_repppd/">No. of Schools Entered Passpercentage Details</a></td>
+
+{% for dlp in "123" %}
+        
+        {% if dlp == '1' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in ppdtotsch %}
+                {% if j.chk_dept == 1 and j.chk_manage == 1 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in ppdtotsch %}               
+                {% if j.chk_dept == 1 and j.chk_manage == 2 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in ppdtotsch %} 
+                {% if j.chk_dept == 1 and j.chk_manage == 3 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                <td align="right">                
+                {% for k in ppdstot %}
+                {% if k.chk_dept == 1 %}
+
+                    {{ k.ppd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>
+                {% endif %}
+
+                {% endfor %}
+
+        {% endif %}        
+
+
+          {% if dlp == '2' %} 
+  
+              {% for mgtlst in "123" %}
+                 
+                {% if mgtlst == '1' %}
+                <td align="right">                
+                {% for j in ppdtotsch %}
+                {% if j.chk_dept == 2 and j.chk_manage == 1 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>
+                {% endif %}
+
+                {% if mgtlst == '2' %}  
+                <td align="right">                
+                {% for j in ppdtotsch %}               
+                {% if j.chk_dept == 2 and j.chk_manage == 2 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}
+                {% endfor %}
+                </td>                
+                {% endif %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">
+                {% for j in ppdtotsch %} 
+                {% if j.chk_dept == 2 and j.chk_manage == 3 %}
+                {{ j.ppd_schcoun }}   
+                {% endif %}           
+                {% endfor %}
+                </td>
+                 <td align="right">               
+                {% for k in ppdstot %}
+                {% if k.chk_dept == 2 %}
+
+                    {{ k.ppd_subtot }}
+
+                {% endif %}
+                {% endfor %}  
+                </td>                                 
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}          
+
+          {% if dlp == '3' %} 
+  
+              {% for mgtlst in "123" %}
+
+                {% if mgtlst == '3' %}
+                <td align="right">                
+                {% for j in ppdtotsch %}
+                {% if j.chk_dept == 3 and j.chk_manage == 3 %}
+                    {{ j.ppd_schcoun }}
+                {% endif %}           
+                {% endfor %}
+                </td> 
+                                              
+                {% endif %}
+               
+                {% endfor %}
+
+        {% endif %}  
+{% endfor %}
+<td></td>
+<td align="right"> {{ppdgrtot}}</td>
 
  </tr>
 
@@ -862,7 +1607,7 @@
 </div>    
 
 <center>
-<a  class="btn btn-large btn-info" href='/schoolnew/school_registration/'>Back</a>
+<a  class="btn btn-large btn-info" href='/'>Back</a>
 </center>
 
 {% endblock %}

@@ -95,6 +95,8 @@ $("#school_name").autocomplete({
   {% csrf_token %}
 <input type="hidden" name="previous_designation" id="previous_designation" value="{{transfer_data.designation}}">
 <input type="hidden" name="new_school_id" id="new_school_id" value="{{New_school_id}}">
+<input type="hidden" name="code" id="code" value="{{code}}">
+<input type="hidden" name="office_code" id="office_code" value="{{office_code}}">
 
 
   <div class="form-group" id="district"><b>{% trans "Name of the District" %}</b>
@@ -106,8 +108,7 @@ $("#school_name").autocomplete({
 
   <b>{% trans "Name of the Block" %}</b>{{ form.block|add_class:"form-control" }}</div>
 
-  
-  <div class="ui-widget"> <b><strong style="color:red;">*</strong>{% trans "Name of the School (Enter First three letters of School Name)" %}</b><input type="text" class="form-control" class="mandatory" id="school_name" name="school_name"   placeholder="NONE"/></div>
+    <div class="ui-widget"> <b><strong style="color:red;">*</strong>{% trans "Name of the School (Enter First three letters of School Name)" %}</b><input type="text" class="form-control" class="mandatory" id="school_name" name="school_name"   placeholder="NONE"/></div>
 <span class="error_message">{{form.school_name.errors}}</span>
 
   

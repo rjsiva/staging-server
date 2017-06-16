@@ -5,6 +5,42 @@
 {% load widget_tweaks %}
 {% load imagekit %}
 {% block content %}
+<style type="text/css">
+
+         .animated {
+            -webkit-animation-duration: 10s;
+            animation-duration: 10s;
+            -webkit-animation-fill-mode: both;
+            animation-fill-mode: both;
+            color: orange;
+            font-weight:bold;
+         }
+         
+         @-webkit-keyframes pulse {
+            0% { -webkit-transform: scale(1); }
+            50% { -webkit-transform: scale(1.1); }
+            100% { -webkit-transform: scale(1); }
+         }
+         
+         @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+         }
+         
+         .pulse {
+            -webkit-animation-name: pulse;
+            animation-name: pulse;
+        }
+    #msg{
+        color : orange ;
+        font-weight: bold;
+    }
+</style>
+
+{% if msg %}
+    <center><h3 class="animated pulse">{{ msg }}</h3></center>
+{% else %}
 
 <center>
 {% if user.account.user_category.user_category == 'school' %}
@@ -14,10 +50,10 @@
 <a class="btn  btn-success" href='{% url "students_child_detail_update" pk=object.pk %}'>Update</a>
 {% if  object.class_studying_id   in transfer_enable_classes %}
 <a class="btn  btn-info" href='{% url "students_child_detail_transfer_detail" pk=object.pk %}' >{% trans "Transfer" %}</a>
-{% else %}
-<a class="btn  btn-danger" href='{% url "students_child_detail_delete" pk=object.pk %}' >{% trans "Delete" %}</a>
+
 {% endif %}
 {% endif %}
+<a class="btn  btn-info" href='{% url "students_child_detail_child_pdfview" pk=object.pk %}' >{% trans "Download Profile" %}</a>
 {% endif %}
 </center><br>
 <table class='table table-bordered table-striped1' border="2" align="center">
@@ -107,8 +143,13 @@
           <th>Additional Information</th></tr><tr>
         <td valign="TOP">
         <table style="margin-left:10px"><tr> <td style="border:0px;" > Academic Year </td><td style="border:0px;" > : </td> <td style="border:0px;" >{{ object.academic_year }} </td> </tr>
+           {% if user.account.get_user_info.management_id == 10  or  user.account.get_user_info.management_id == 13 %}
 
-            <tr> <td style="border:0px;padding-top:10px;" > Group Code </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.group_code.group_name %} {{ object.group_code.group_name }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Group Code </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.cbse_subject1 %} {{ object.cbse_subject1}}, {{ object.cbse_subject2}}, {{ object.cbse_subject3}}, {{ object.cbse_subject4}}, {{ object.cbse_opt_subject}} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
+            {% else %}
+             <tr> <td style="border:0px;padding-top:10px;" > Group Code </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.group_code.group_name %} {{ object.group_code.group_name }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
+            {% endif %}
+
             <tr> <td style="border:0px;padding-top:10px;" > Medium of Education </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.education_medium %} {{ object.education_medium }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Attendance Status </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.attendance_status %} {{ object.attendance_status }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Sports Player </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.sports_player %} {{ object.sports_player }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}  </td> </tr>
@@ -124,9 +165,10 @@
         <td valign="TOP">
         <table style="margin-left:10px">
             <tr> <td style="border:0px;" > Nutritious Meal Programme </td><td style="border:0px;" > : </td> <td style="border:0px;" >{% if object.nutritious_meal_programme %} {{ nutritious_meal_programme }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
-            <tr> <td style="border:0px;" > Bank </td><td style="border:0px;" > : </td> <td style="border:0px;" >{% if object.bank %} {{ object.bank }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
+            <tr> <td style="border:0px;" > Bank </td><td style="border:0px;" > : </td> <td style="border:0px;" >{% if object.banknew %} {{ object.banknew }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
+            <tr> <td style="border:0px;" > Branch </td><td style="border:0px;" > : </td> <td style="border:0px;" >{% if object.branchnew.branch %} {{ object.branchnew.branch }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Bank Account No </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.bank_account_no %} {{ object.bank_account_no }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
-            <tr> <td style="border:0px;padding-top:10px;" > Bank IFSC Code </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.bank_ifsc_code %} {{ object.bank_ifsc_code }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
+            <tr> <td style="border:0px;padding-top:10px;" > Bank IFSC Code </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.bank_ifsc_codenew %} {{ object.bank_ifsc_codenew }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Laptop Issued </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.laptop_issued %} {{ object.laptop_issued }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
             <tr> <td style="border:0px;padding-top:10px;" > Laptop Sl.No. </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.laptop_slno %} {{ object.laptop_slno }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
           <!--   <tr> <td style="border:0px;padding-top:10px;" > Incentivebond Issued </td><td style="border:0px;padding-top:10px;" > : </td> <td style="border:0px;padding-top:10px;" >{% if object.incentivebond_issued %} {{ object.incentivebond_issued }} {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}   </td> </tr>
@@ -191,5 +233,5 @@
 
 <br>  
 
-
+{% endif %}
 {% endblock %}

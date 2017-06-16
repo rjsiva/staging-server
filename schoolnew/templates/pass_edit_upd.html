@@ -361,11 +361,13 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
 <input type="text" class="form-control" style="text-align:center; " name="ten_a_per" id="ten_a_per" placeholder="00.00"  value="{{ten_a_per}}" readonly="readonly"  />
     </td>  
         </tr>
-        <tr>
 
-        <td > 
-        <b>{% trans "XII Standard" %}</b>
-        </td>
+
+{% if pass_hr == 'Yes' %}
+<tr>
+<td > 
+<b>{% trans "XII Standard" %}</b>
+</td>
 <td>
 {% if acade_det.schooltype == 'Co-Ed' %}
 <input id="twelve_b_app" name="twelve_b_app" type="number" class="form-control" value= "{{twelve_b_app}}"  min='0' max='9999' onblur="cal_passper(frm_pass.twelve_b_app.value,frm_pass.twelve_b_pass.value,'twelve_b_per',frm_pass.twelve_g_app.value,frm_pass.twelve_g_pass.value,'twelve_g_per','twelve_app','twelve_pass','twelve_a_per','twelve_b_app')" />
@@ -433,7 +435,9 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
 <td >
 <input type="text" class="form-control" style="text-align:center; " name="twelve_a_per" id="twelve_a_per" placeholder="00.00"  value="{{twelve_a_per}}" readonly="readonly"  />
     </td>   
-        </tr>   
+        </tr>  
+{% endif %}
+
 </tbody>       
 </table>
 
@@ -446,6 +450,73 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
 
 
 <form action="" method="POST">
+{% if pass_hr == 'Yes' %}
+<table  border="1">
+  <tr>
+            <th style="text-align:center;" rowspan="2" >{% trans "Academic Year" %}</th>
+            <th style="text-align:center;" rowspan="2" >{% trans "Standard" %}</th>       
+            <th style="text-align:center;" colspan="3" >{% trans "Boys" %}</th>
+            <th style="text-align:center;" colspan="3">{% trans "Girls" %}</th>   
+            <th style="text-align:center;" colspan="3">{% trans "Total" %}</th>
+            <th style="text-align:center;" rowspan="2" >{% trans "Update" %}</th>
+            <th style="text-align:center;" rowspan="2" >{% trans "Delete" %}</th>                                   
+            </tr>
+<tr>
+            <th style="text-align:center;" >{% trans "Appeared " %}</th>
+            <th style="text-align:center;" >{% trans "Passed" %}</th>
+            <th style="text-align:center;" >{% trans "Passed Percentage (%)" %}</th>
+
+            <th style="text-align:center;">{% trans "Appeared" %}</th>  
+            <th style="text-align:center;">{% trans "Passed" %}</th>
+            <th style="text-align:center;" >{% trans "Passed Percentage (%)" %}</th>             
+
+
+            <th style="text-align:center;">{% trans "Appeared" %}</th>  
+            <th style="text-align:center;">{% trans "Passed" %}</th>
+            <th style="text-align:center;" >{% trans "Passed Percentage (%)" %}</th>     
+  </tr>
+ {% for i in passper_det %}  
+       <tr>
+        <td style="text-align:center;" rowspan="2"> {{ i.acad_yr}}</td>
+
+        <td > 
+        <b>{% trans "X Standard" %}</b>
+        </td>
+        <td style="text-align:center;"> {{ i.ten_b_app}}</td>
+        <td style="text-align:center;"> {{ i.ten_b_pass}}</td>
+         <td style="text-align:center;"> {{ i.ten_b_per}}</td>
+          <td style="text-align:center;"> {{ i.ten_g_app}}</td>
+           <td style="text-align:center;"> {{ i.ten_g_pass}}</td>
+            <td style="text-align:center;"> {{ i.ten_g_per}}</td>
+          <td style="text-align:center;"> {{ i.ten_app}}</td>
+           <td style="text-align:center;"> {{ i.ten_pass}}</td>
+            <td style="text-align:center;"> {{ i.ten_a_per}}</td> 
+        <td style="text-align:center;" rowspan="2"><a href="/schoolnew/pass_update/{{i.id}}"><input type="button" class="btn btn-info" value="Update"></a></td>
+        <td style="text-align:center;" rowspan="2"><a href="/schoolnew/pass_delete/{{i.id}}"><input type="button" class="btn btn-danger" value="Delete"></a></td>           
+        </tr>
+
+{% if pass_hr == 'Yes' %}        
+    <tr>
+        <td > 
+        <b>{% trans "XII Standard" %}</b>
+        </td>
+        <td style="text-align:center;"> {{ i.twelve_b_app}}</td>
+        <td style="text-align:center;"> {{ i.twelve_b_pass}}</td>
+         <td style="text-align:center;"> {{ i.twelve_b_per}}</td>
+          <td style="text-align:center;"> {{ i.twelve_g_app}}</td>
+           <td style="text-align:center;"> {{ i.twelve_g_pass}}</td>
+            <td style="text-align:center;"> {{ i.twelve_g_per}}</td>
+          <td style="text-align:center;"> {{ i.twelve_app}}</td>
+           <td style="text-align:center;"> {{ i.twelve_pass}}</td>
+            <td style="text-align:center;"> {{ i.twelve_a_per}}</td>  
+
+        </tr>        
+{% endif %}
+     
+{% endfor %}
+
+</table>
+{% else %}
 
 <table  border="1">
   <tr>
@@ -472,9 +543,8 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
             <th style="text-align:center;" >{% trans "Passed Percentage (%)" %}</th>     
   </tr>
  {% for i in passper_det %}  
-
        <tr>
-        <td style="text-align:center;" rowspan="2"> {{ i.acad_yr}}</td>
+        <td style="text-align:center;"> {{ i.acad_yr}}</td>
 
         <td > 
         <b>{% trans "X Standard" %}</b>
@@ -488,9 +558,11 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
           <td style="text-align:center;"> {{ i.ten_app}}</td>
            <td style="text-align:center;"> {{ i.ten_pass}}</td>
             <td style="text-align:center;"> {{ i.ten_a_per}}</td> 
-        <td style="text-align:center;" rowspan="2"><a href="/schoolnew/pass_update/{{i.id}}"><input type="button" class="btn btn-info" value="Update"></a></td>
-        <td style="text-align:center;" rowspan="2"><a href="/schoolnew/pass_delete/{{i.id}}"><input type="button" class="btn btn-danger" value="Delete"></a></td>           
+        <td style="text-align:center;"><a href="/schoolnew/pass_update/{{i.id}}"><input type="button" class="btn btn-info" value="Update"></a></td>
+        <td style="text-align:center;"><a href="/schoolnew/pass_delete/{{i.id}}"><input type="button" class="btn btn-danger" value="Delete"></a></td>           
         </tr>
+
+{% if pass_hr == 'Yes' %}        
     <tr>
         <td > 
         <b>{% trans "XII Standard" %}</b>
@@ -506,9 +578,15 @@ Pass Percentage of the School for the Academic year from 2010-11 to 2015-16</h2>
             <td style="text-align:center;"> {{ i.twelve_a_per}}</td>  
 
         </tr>        
+{% endif %}
      
 {% endfor %}
+
 </table>
+
+
+
+{% endif %}
 
 <br><br><br>
       <center> <a href="/schoolnew/school_registration">HOME</a></center>

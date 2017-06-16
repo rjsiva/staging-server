@@ -293,16 +293,34 @@ urlpatterns = patterns('',
     ),  
 
     url(
+        regex=r'^sch_dist_abs/$',
+        view=Sch_Dist_abs.as_view(),
+        name='sch_dist_abs'
+    ), 
+
+    url(
         regex=r'^sch_dist_abs/(?P<pk>\d+?)/$',
         view=Sch_Dist_abs.as_view(),
         name='sch_dist_abs'
     ), 
 
     url(
+        regex=r'^sch_edist_abs/$',
+        view=Edn_dist_abs.as_view(),
+        name='sch_edist_abs'
+    ),  
+
+    url(
         regex=r'^sch_block_abs/(?P<pk>\d+?)/$',
         view=Sch_Blk_abs.as_view(),
         name='sch_block_abs'
-    ),  
+    ), 
+
+    url(
+        regex=r'^sch_block_abs/$',
+        view=Sch_Blk_abs.as_view(),
+        name='sch_block_abs'
+    ),       
 
     url(
         regex=r'^sch_srep_bi/$',
@@ -341,71 +359,233 @@ urlpatterns = patterns('',
     ), 
 
     url(
-        regex=r'^sch_dist_repbi/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_srep_ld/$',
+        view=Sch_sr_ld.as_view(),
+        name='sch_srep_ld'
+    ), 
+    url(
+        regex=r'^sch_srep_bd/$',
+        view=Sch_sr_bd.as_view(),
+        name='sch_srep_bd'
+    ), 
+
+    url(
+        regex=r'^sch_srep_bad/$',
+        view=Sch_sr_bad.as_view(),
+        name='sch_srep_bad'
+    ), 
+
+
+    url(
+        regex=r'^sch_srep_sd/$',
+        view=Sch_sr_sd.as_view(),
+        name='sch_srep_sd'
+    ), 
+
+
+    url(
+        regex=r'^sch_srep_ict/$',
+        view=Sch_sr_ict.as_view(),
+        name='sch_srep_ict'
+    ),
+
+
+    url(
+        regex=r'^sch_srep_ppd/$',
+        view=Sch_sr_ppd.as_view(),
+        name='sch_srep_ppd'
+    ),
+
+
+    url(
+        regex=r'^sch_dist_repbi/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_bi.as_view(),
         name='sch_dist_repbi'
     ), 
      
     url(
-        regex=r'^sch_dist_repai/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_dist_repai/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_ai.as_view(),
         name='sch_dist_repai'
     ), 
     url(
-        regex=r'^sch_dist_repii/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_dist_repii/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_ii.as_view(),
         name='sch_dist_repii'
     ), 
     url(
-        regex=r'^sch_dist_repcs/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_dist_repcs/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_cs.as_view(),
         name='sch_dist_repcs'
     ),     
     url(
-        regex=r'^sch_dist_repti/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_dist_repti/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_ti.as_view(),
         name='sch_dist_repti'
     ),
 
     url(
-        regex=r'^sch_dist_repnti/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        regex=r'^sch_dist_repnti/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
         view=Sch_blkr_nti.as_view(),
         name='sch_dist_repnti'
     ),
+    url(
+        regex=r'^sch_dist_repld/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_ld.as_view(),
+        name='sch_dist_repld'
+    ), 
+    url(
+        regex=r'^sch_dist_repbd/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_bd.as_view(),
+        name='sch_dist_repbd'
+    ),     
 
+    url(
+        regex=r'^sch_dist_repbad/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_bad.as_view(),
+        name='sch_dist_repbad'
+    ),
+    url(
+        regex=r'^sch_dist_repsd/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_sd.as_view(),
+        name='sch_dist_repsd'
+    ),
+    url(
+        regex=r'^sch_dist_repict/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_ict.as_view(),
+        name='sch_dist_repict'
+    ),
+    url(
+        regex=r'^sch_dist_repppd/(?P<blk>\d+?)/(?P<code>\d+?)/(?P<code1>\d+?)/$',
+        view=Sch_blkr_ppd.as_view(),
+        name='sch_dist_repppd'
+    ),    
 
     url(
         regex=r'^sch_dist_repbi/(?P<blk>\d+?)/$',
         view=Sch_blkr_bi.as_view(),
         name='sch_dist_repbi'
     ), 
-     
+
+    url(
+        regex=r'^sch_dist_repbi/$',
+        view=Sch_blkr_bi.as_view(),
+        name='sch_dist_repbi'
+    ), 
+
     url(
         regex=r'^sch_dist_repai/(?P<blk>\d+?)/$',
         view=Sch_blkr_ai.as_view(),
         name='sch_dist_repai'
     ), 
     url(
+        regex=r'^sch_dist_repai/$',
+        view=Sch_blkr_ai.as_view(),
+        name='sch_dist_repai'
+    ),     
+    url(
         regex=r'^sch_dist_repii/(?P<blk>\d+?)/$',
         view=Sch_blkr_ii.as_view(),
         name='sch_dist_repii'
-    ), 
+    ),
+    url(
+        regex=r'^sch_dist_repii/$',
+        view=Sch_blkr_ii.as_view(),
+        name='sch_dist_repii'
+    ),     
     url(
         regex=r'^sch_dist_repcs/(?P<blk>\d+?)/$',
         view=Sch_blkr_cs.as_view(),
         name='sch_dist_repcs'
-    ),     
+    ),
+    url(
+        regex=r'^sch_dist_repcs/$',
+        view=Sch_blkr_cs.as_view(),
+        name='sch_dist_repcs'
+    ),         
     url(
         regex=r'^sch_dist_repti/(?P<blk>\d+?)/$',
         view=Sch_blkr_ti.as_view(),
         name='sch_dist_repti'
     ),
-
+    url(
+        regex=r'^sch_dist_repti/$',
+        view=Sch_blkr_ti.as_view(),
+        name='sch_dist_repti'
+    ),
     url(
         regex=r'^sch_dist_repnti/(?P<blk>\d+?)/$',
         view=Sch_blkr_nti.as_view(),
         name='sch_dist_repnti'
     ),
+    url(
+        regex=r'^sch_dist_repnti/$',
+        view=Sch_blkr_nti.as_view(),
+        name='sch_dist_repnti'
+    ),
+    url(
+        regex=r'^sch_dist_repld/(?P<blk>\d+?)/$',
+        view=Sch_blkr_ld.as_view(),
+        name='sch_dist_repld'
+    ), 
+    url(
+        regex=r'^sch_dist_repld/$',
+        view=Sch_blkr_ld.as_view(),
+        name='sch_dist_repld'
+    ),
+     
+    url(
+        regex=r'^sch_dist_repbd/(?P<blk>\d+?)/$',
+        view=Sch_blkr_bd.as_view(),
+        name='sch_dist_repbd'
+    ),
+
+    url(
+        regex=r'^sch_dist_repbd/$',
+        view=Sch_blkr_bd.as_view(),
+        name='sch_dist_repbd'
+    ),   
+
+    url(
+        regex=r'^sch_dist_repbad/(?P<blk>\d+?)/$',
+        view=Sch_blkr_bad.as_view(),
+        name='sch_dist_repbad'
+    ),
+    url(
+        regex=r'^sch_dist_repbad/$',
+        view=Sch_blkr_bad.as_view(),
+        name='sch_dist_repbad'
+    ),    
+    url(
+        regex=r'^sch_dist_repsd/(?P<blk>\d+?)/$',
+        view=Sch_blkr_sd.as_view(),
+        name='sch_dist_repsd'
+    ),
+    url(
+        regex=r'^sch_dist_repsd/$',
+        view=Sch_blkr_sd.as_view(),
+        name='sch_dist_repsd'
+    ),    
+    url(
+        regex=r'^sch_dist_repict/(?P<blk>\d+?)/$',
+        view=Sch_blkr_ict.as_view(),
+        name='sch_dist_repict'
+    ),
+    url(
+        regex=r'^sch_dist_repict/$',
+        view=Sch_blkr_ict.as_view(),
+        name='sch_dist_repict'
+    ),
+    url(
+        regex=r'^sch_dist_repppd/(?P<blk>\d+?)/$',
+        view=Sch_blkr_ppd.as_view(),
+        name='sch_dist_repppd'
+    ),    
+    url(
+        regex=r'^sch_dist_repppd/$',
+        view=Sch_blkr_ppd.as_view(),
+        name='sch_dist_repppd'
+    ), 
 
     url(
         regex=r'^sch_rep/(?P<blk>\d+?)/(?P<code>\d+?)/$',
@@ -413,9 +593,26 @@ urlpatterns = patterns('',
         name='sch_rep'
     ),
     url(
+        regex=r'^sch_rep1/(?P<blk>\d+?)/(?P<code>\d+?)/$',
+        view=Sch_srep1.as_view(),
+        name='sch_rep'
+    ),    
+    url(
         regex=r'^sch_rep/(?P<blk>\d+?)/$',
         view=Sch_srep.as_view(),
         name='sch_rep'
-    ),    
+    ),   
+
+    url(
+        regex=r'^sch_rep1/(?P<blk>\d+?)/$',
+        view=Sch_srep1.as_view(),
+        name='sch_rep'
+    ), 
+
+    url(
+        regex=r'^deo_rep/$',
+        view=Deo_srep.as_view(),
+        name='deo_rep'
+    ),        
     # url(r'^admin/', include(admin.site.urls)),
 )

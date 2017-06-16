@@ -48,6 +48,18 @@ function dob_regular(val)
   {% csrf_token %}
 
  
+ <!-- <div class="form-group"> <b>{% trans "Order No." %}</b>
+
+
+ <select  class="form-control" name="gos" id="gos" />
+{% for i in go %}
+<option value="{{i}}">{{i}}</option>
+{% endfor %}
+</select>
+  </div>
+ -->
+
+
   <div class="form-group"  >  
     <b>{% trans "Date of Joining"  %}</b>
     <input  class="form-control" name="joining_order_date" id="joining_order_date" type="text" value="{{joining_order_date}}" data-mask="" data-inputmask="'alias': 'dd/mm/yyyy'" onblur="dob_regular(this.value)"  >

@@ -59,15 +59,71 @@
                         <th width=5% style="vertical-align:middle;" class="text-center">Un-Aided</th>
                         <th width=5% style="vertical-align:middle;" class="text-center">Total</th>
 </tr>
-    {% for i in bl %}
+    {% for k in edist_mas %}
+<tr>
+ <span style="color:Green" class="pull-right"> 
+
+    <td><span style="color:Green"> {{k.edn_dist_name}} </span></td> 
+
+                        <td align="right"> 
+                        {% for j in  schlst_ed %}
+
+                        {% if j.edu_dist_id == k.edn_dist_id and j.chk_dept == 1 %}
+                        <span style="color:Green" class="pull-right">
+                            {{ j.disttot }}  
+                        </span>
+                        {% else %}
+                        {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 1  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+                        </td>
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 2  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+
+                        </td>
+
+                        <td>
+                            {% for ed in  dsemandet_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id and ed.manage_cate_id == 3  %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemdet}}
+                              </span>
+                            {% endif %}
+                            {% endfor %} 
+ 
+                        </td>  
+
+                        <td>
+                            {% for ed in  dsemansubtot_ed %}
+                            {% if ed.edu_dist_id == k.edn_dist_id %}
+                            <span style="color:Green" class="pull-right">                            
+                            {{ed.dsemantot}}
+                              </span>
+                            {% endif %}
+                            {% endfor %}
+                        </td>                                              
+    {% for i in bl1 %}
+    {% if i.edn_dist_id = k.edn_dist_id %}     
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/1">{{i.block_name}}</a></td>
-                         <!-- <td><a href="/bus_pass/block_report/{{i.id}}">{{i.block_name}}</a></td> -->
-                        <!-- <td>{{i.district_name}}</td> -->
+                        <td><span class="pull-right"><a href="/schoolnew/sch_rep1/{{i.block_id}}/1">{{i.block.block_name}}</a></span></td>
                         <td align="right"> 
                         {% for j in  schlst %}
-                        {% if j.block == i.id and j.chk_dept == 1 %}
+                        {% if j.block == i.block_id and j.chk_dept == 1 %}
                             {{ j.schblktot }}
                         {% endif %}
                         {% endfor %}
@@ -76,21 +132,21 @@
 
                         <td align="right">                        
                         {% for j in  dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 1 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 1 %}
                                     {{ j.dsemdet }}
                                 {% endif %}
                         {% endfor %}
                         </td>
                         <td align="right"> 
                         {% for j in dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 2 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 2 %}
                                     {{ j.dsemdet }}
                                 {% endif %}
                         {% endfor %}
                         </td>
                         <td align="right"> 
                         {% for j in  dsemandet %}
-                                {% if j.block == i.id and j.manage_cate_id == 3 %}
+                                {% if j.block == i.block_id and j.manage_cate_id == 3 %}
                                     {{ j.dsemdet}}
                                 {% endif %}
                         {% endfor %}
@@ -104,8 +160,11 @@
                         {% endfor %}
                         </td>
     </tr>
+    {% endif %}    
     {% endfor %}
-    <tr>
+                </tr>
+    {% endfor %}
+<tr>
 <th> TOTAL</th>
 
 
@@ -173,7 +232,7 @@
     {% for i in bl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/4">{{i.block_name}}</a></td>
+                        <td><a href="/schoolnew/sch_rep1/{{i.id}}/4">{{i.block_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 1 %}
@@ -309,7 +368,7 @@
     {% for i in bl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/2">{{i.block_name}}</a></td>
+                        <td><a href="/schoolnew/sch_rep1/{{i.id}}/2">{{i.block_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 2 %}
@@ -409,7 +468,7 @@
     {% for i in bl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/3">{{i.block_name}}</a></td>
+                        <td><a href="/schoolnew/sch_rep1/{{i.id}}/3">{{i.block_name}}</a></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 3 %}

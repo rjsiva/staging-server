@@ -62,11 +62,84 @@
                         <th width=5% class="text-center">Sanctioned</th>
                         <th width=5% cclass="text-center">Filled</th>
                         </tr>            
+{% for k in edist_mas %}
+<tr>
+ <span style="color:Green" class="pull-right"> 
 
-    {% for i in bl %}
+    <td><span style="color:Green"> {{k.edn_dist_name}} </span></td> 
+
+                        <td align="right"> 
+                        {% for j in  schlst_ed %}
+
+                        {% if j.edu_dist_id == k.edn_dist_id and j.chk_dept == 1 %}
+                        <span style="color:Green" class="pull-right">
+                            {{ j.disttot }}  
+                        </span>
+                        {% else %}
+                        {% endif %}
+                        {% endfor %}
+                        </td>
+
+                        <td align="right">                        
+                        {% for j in  dsemandet_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id and j.manage_cate_id == 1 %}
+                                    <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemdet }}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td align="right">                        
+                        {% for j in  dsemanfdet_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id and j.manage_cate_id == 1 %}
+                                <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemfdet }}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td> 
+
+                        <td align="right"> 
+                        {% for j in dsemandet_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id and j.manage_cate_id == 2 %}
+                                <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemdet }}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td align="right"> 
+                        {% for j in dsemanfdet_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id and j.manage_cate_id == 2 %}
+                                <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemfdet }}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td>                        
+                        <td align="right"> 
+                        {% for j in  dsemansubtot_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id %}
+                                <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemantot}}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td align="right"> 
+                        {% for j in  dsemanfsubtot_ed %}
+                                {% if j.edu_dist_id == k.edn_dist_id %}
+                                <span style="color:Green" class="pull-right">  
+                                    {{ j.dsemanftot}}
+                                     </span>
+                                {% endif %}
+                        {% endfor %}
+                        </td>                                          
+    {% for i in bl1 %}
+    {% if i.edn_dist_id = k.edn_dist_id %}    
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/1">{{i.block_name}}</a></td>
+                        <td> <span class="pull-right">  <a href="/schoolnew/sch_rep/{{i.block_id}}/1">{{i.block.block_name}}</a></span></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 1 %}
@@ -120,8 +193,11 @@
                         {% endfor %}
                         </td>
     </tr>
+    {% endif %}
     {% endfor %}
-    <tr>
+                </tr>
+    {% endfor %}
+<tr>
 <th> TOTAL</th>
 
 
@@ -156,13 +232,17 @@
                                 {% endif %}
                               {% endfor %}
                         </td>
-                        <td align="right"> 
-                            {{dsemantotal.staff__post_sanc__sum}}
-                        </td>
-                        <td align="right"> 
-                            {{dsemanftotal.staff__post_filled__sum}}
-                        </td>
 
+                        <td align="right"> 
+                         {% if dsemantotal.staff__post_sanc__sum %}
+                            {{dsemantotal.staff__post_sanc__sum}}
+                         {% endif %}
+                        </td>
+                        <td align="right"> 
+                            {% if dsemanftotal.staff__post_filled__sum %}
+                            {{dsemanftotal.staff__post_filled__sum}}
+                            {% endif %}
+                        </td>
 
 
 </tr>
@@ -202,7 +282,7 @@
     {% for i in bl %}
                       <tr>
                         
-                        <td><a href="/schoolnew/sch_rep/{{i.id}}/4">{{i.block_name}}</a></td>
+                        <td><span class="pull-right"><a href="/schoolnew/sch_rep/{{i.id}}/4">{{i.block_name}}</a></span></td>
                         <td align="right"> 
                         {% for j in  schlst %}
                         {% if j.block == i.id and j.chk_dept == 1 %}
@@ -343,10 +423,14 @@
                               {% endfor %}
                         </td>
                         <td align="right"> 
+                            {% if manatot %}
                             {{mantotal.manatot}}
+                            {% endif %}
                         </td>
                         <td align="right"> 
+                            {% if manftot %}
                             {{manftotal.manftot}}
+                            {% endif %}
                         </td>
 
 
@@ -481,10 +565,14 @@
                         </td>                        
 
                         <td align="right"> 
+                        {% if staff__post_sanc__sum %}
                             {{deemantotal.staff__post_sanc__sum}}
+                            {% endif %}
                         </td>
                         <td align="right">
+                        {% if staff__post_filled__sum %}
                             {{deemanftotal.staff__post_filled__sum}}
+                            {% endif %}
                         </td>
 
 </tr>

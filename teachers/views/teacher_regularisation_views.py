@@ -25,20 +25,31 @@ class Teacher_regularisation_create(View):
 
            
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid)       
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id           
-            school_id =staff_id.school_id# request.user.account.associated_with   
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count    
-            
-            posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
-            if posting_desg.count()==0:
-                msg = " First make entries in Posting  "
-                messages.warning(request, msg)
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+        
+            # request.user.account.associated_with   
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count    
+                
+                posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))
+                if posting_desg.count()==0:
+                    msg = " First make entries in Posting  "
+                    messages.warning(request, msg)
+                    return redirect('teacher_personnel_entry_after',pk=tid)
+            else:
+                messages.success(request, 'you cannot view other records')
                 return redirect('teacher_personnel_entry_after',pk=tid)
-                     
+
             edu_list = Teacher_regularisation_entry.objects.filter(teacherid_id=tid)
             if edu_list.count()==0:
                 messages.success(request, 'No Data')         
@@ -116,40 +127,58 @@ class teacher_regularisation_update(View):
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')  
-            staff_id = Teacher_detail.objects.get(id = tid)     
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id
-            school_id = staff_id.school_id
-            desig_sub= Desig_subjects.objects.all()
-            if ((basic_det.sch_cate_id==1)|(basic_det.sch_cate_id==11)):
-                posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='PS'))
-            elif ((basic_det.sch_cate_id==2)|(basic_det.sch_cate_id==4)|(basic_det.sch_cate_id==12)):
-                posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='MS'))
-            elif ((basic_det.sch_cate_id==6)|(basic_det.sch_cate_id==7)|(basic_det.sch_cate_id==8)) :
-                posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS'))
-            elif ((basic_det.sch_cate_id==3)|(basic_det.sch_cate_id==5)|(basic_det.sch_cate_id==9)|(basic_det.sch_cate_id==10)):
-                posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS'))
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
             else:
-                posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='OFFICE')) & Q(user_level__isnull=True))
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            tid=self.kwargs.get('pk')
-            pk1=self.kwargs.get('pk1')
-            staff_id = Teacher_detail.objects.get(id = tid)          
-            dategovt=staff_id.dofsed
-            staffid_1=staff_id.stafs
-            staff_name=staff_id.name
-            staff_uid=staff_id.count   
-             
-            posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))      
-            instance=Teacher_regularisation_entry.objects.get(id=pk1)         
-            form = Teacher_regularisation_entryform(instance=instance)
-            doregu_session = instance.doregu_session 
-            teacherid_id = instance.teacherid_id
-            designation = instance.designation
-            order_no=instance.order_no
-            order_date = instance.order_date  
-            date_of_regularisation =instance.date_of_regularisation         
-            return render(request,'teachers/regularisation/teacher_regularisation_detail_form.html',locals())
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                sch_key = basic_det.id
+                school_id = staff_id.school_id
+                desig_sub= Desig_subjects.objects.all()
+                if ((basic_det.sch_cate_id==1)|(basic_det.sch_cate_id==11)):
+                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='PS'))
+                elif ((basic_det.sch_cate_id==2)|(basic_det.sch_cate_id==4)|(basic_det.sch_cate_id==12)):
+                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='MS'))
+                elif ((basic_det.sch_cate_id==6)|(basic_det.sch_cate_id==7)|(basic_det.sch_cate_id==8)) :
+                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HS')|Q(user_level='HRHS'))
+                elif ((basic_det.sch_cate_id==3)|(basic_det.sch_cate_id==5)|(basic_det.sch_cate_id==9)|(basic_det.sch_cate_id==10)):
+                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='SCHOOL')) & Q(user_level__isnull=True)|Q(user_level='HR')|Q(user_level='HRHS'))
+                else:
+                    posting_desg= User_desig.objects.filter((Q(user_cate='SCHOOL&OFFICE')|Q(user_cate='OFFICE')) & Q(user_level__isnull=True))
+
+                tid=self.kwargs.get('pk')
+                pk1=self.kwargs.get('pk1')
+                # staff_id = Teacher_detail.objects.get(id = tid)          
+                dategovt=staff_id.dofsed
+                staffid_1=staff_id.stafs
+                staff_name=staff_id.name
+                staff_uid=staff_id.count   
+                 
+                posting_desg=Teacher_posting_entry.objects.filter(teacherid_id=tid).filter(Q(type_of_posting=1) | Q(type_of_posting=2))      
+                if (Teacher_regularisation_entry.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+
+                    instance=Teacher_regularisation_entry.objects.get(id=pk1,teacherid_id=tid)         
+                    form = Teacher_regularisation_entryform(instance=instance)
+                    doregu_session = instance.doregu_session 
+                    teacherid_id = instance.teacherid_id
+                    designation = instance.designation
+                    order_no=instance.order_no
+                    order_date = instance.order_date  
+                    date_of_regularisation =instance.date_of_regularisation         
+                    return render(request,'teachers/regularisation/teacher_regularisation_detail_form.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)   
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

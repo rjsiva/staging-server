@@ -428,8 +428,8 @@ maxlength="10"  /></div>
         <td> {{ i.school_name1|upper}}</td>
         <td> {{ i.district|upper }}</td>
         <td> {{ i.type_of_posting }}</td>
-        <td> {{ i.period_from }}</td>
-        <td> {{ i.period_to }}</td>
+        <td> {{ i.period_from  |date:"d-m-Y" }}</td>
+        <td> {{ i.period_to  |date:"d-m-Y"}}</td>
         <td><a href="/teachers/teacher_posting_update/{{tid}}/{{i.id}}/"><button type="button" class="btn btn-warning">Update</button></a></td>    
         {% endfor %}
      </tr>

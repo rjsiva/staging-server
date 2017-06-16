@@ -796,7 +796,7 @@ function dob_regular1(val,id)
         {{ i.post_name_charge_committed.school_name1 }}</td>
         <td> {{ i.gist |upper }}</td>
         <td> {{ i.charge_memo_number }}</td>
-        <td> {{ i.charge_memo_date }}</td>
+        <td> {{ i.charge_memo_date  |date:"d-m-Y" }}</td>
         <td> {{ i.type_charge_memo }}</td>
         <td><a href="/teachers/teacher_action_update/{{tid}}/{{i.id}}"><button type="button" class="btn btn-warning">Update</button></a></td>
         

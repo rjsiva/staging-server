@@ -25,25 +25,38 @@ class exam_camp_duty_create(View):
                 
             # school_id = request.user.account.associated_with
             tid=self.kwargs.get('pk')        
-            staff_id = Teacher_detail.objects.get(id = tid) 
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id           
-            school_id =staff_id.school_id
+            if (Teacher_detail.objects.filter(id=tid,transfer_flag='No',ofs_flag=False)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid,transfer_flag='No',ofs_flag=False)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count           
-            desig=User_desig.objects.all()
-            
-            subjects=Subject.objects.order_by('subject_name').values('subject_name').distinct()
-            month_value=Months.objects.all()
-            exams=Exam_duty.objects.all()
-            camps=Camp_duty.objects.all()
-            form=Teacher_result_exam_form()       
-            edu_list = Teacher_result_exam.objects.filter(teacherid_id=tid)      
-            if edu_list.count()==0:
-                messages.success(request, 'No Data')       
-            return render(request,'teachers/exam_camp_duty/exam_camp_details.html',locals())
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                sch_key = basic_det.id           
+                
+
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count           
+                desig=User_desig.objects.all()
+                
+                subjects=Subject.objects.order_by('subject_name').values('subject_name').distinct()
+                month_value=Months.objects.all()
+                exams=Exam_duty.objects.all()
+                camps=Camp_duty.objects.all()
+                form=Teacher_result_exam_form()       
+                edu_list = Teacher_result_exam.objects.filter(teacherid_id=tid)      
+                if edu_list.count()==0:
+                    messages.success(request, 'No Data')       
+                return render(request,'teachers/exam_camp_duty/exam_camp_details.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     
@@ -124,28 +137,46 @@ class exam_camp_duty_update(View):
             month_value=Months.objects.all()
             exams=Exam_duty.objects.all()
             camps=Camp_duty.objects.all()
-            staff_id = Teacher_detail.objects.get(id = tid)  
-            basic_det=Basicinfo.objects.get(school_id=staff_id.school_id)
-            sch_key = basic_det.id           
-            school_id =staff_id.school_id
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                staff_id = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
 
-            dategovt=staff_id.dofsed
-            staff_name=staff_id.name
-            staff_uid=staff_id.count   
-            instance=Teacher_result_exam.objects.get(id=pk1)
-            form = Teacher_result_exam_form(instance=instance)        
-            teacherid_id = instance.teacherid_id
-            month =instance.month  
-            year=instance.year
-           
-            subject=instance.subject
-            appeared=instance.appeared
-            passed=instance.passed
-            percentage=instance.percentage
-            exam_duty=instance.exam_duty
-            val_camp=instance.val_camp
-               
-            return render(request,'teachers/exam_camp_duty/exam_camp_details_upd.html',locals())
+
+            school_id =staff_id.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                sch_key = basic_det.id           
+                
+
+                dategovt=staff_id.dofsed
+                staff_name=staff_id.name
+                staff_uid=staff_id.count   
+                if (Teacher_result_exam.objects.filter(id=pk1,teacherid_id=tid)).count()>0:
+                    instance=Teacher_result_exam.objects.get(id=pk1,teacherid_id=tid)
+                    form = Teacher_result_exam_form(instance=instance)        
+                    teacherid_id = instance.teacherid_id
+                    month =instance.month  
+                    year=instance.year
+                   
+                    subject=instance.subject
+                    appeared=instance.appeared
+                    passed=instance.passed
+                    percentage=instance.percentage
+                    exam_duty=instance.exam_duty
+                    val_camp=instance.val_camp
+                       
+                    return render(request,'teachers/exam_camp_duty/exam_camp_details_upd.html',locals())
+                else:
+                    messages.info(request,'Record DoesNotExist')
+                    return HttpResponseRedirect('/')
+
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 

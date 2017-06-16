@@ -738,9 +738,9 @@ function date_future_chk(inpid)
 
         {% else %}
 
-        <div class="form-group"> <b>{% trans "Schools's Landline Phone No.:" %}</b>{{form.landline|attr:'max:99999999'|attr:'min:100000'|attr:'maxlength:8'|add_class:"form-control" }}</div><span class="error_message">{{form.Landline.errors}}</span>
+        <div class="form-group"> <b>{% trans "Schools's Landline Phone No.:" %}</b>{{form.landline|attr:'max:99999999'|attr:'maxlength:8'|add_class:"form-control" }}</div><span class="error_message">{{form.Landline.errors}}</span>
 
-        <div class="form-group"> <b>{% trans "Another Landline No. (If exist):" %}</b>{{form.landline2|attr:'max:99999999'|attr:'min:100000'|attr:'maxlength:8'|add_class:"form-control" }}</div><span class="error_message">{{form.landline2.errors}}</span>
+        <div class="form-group"> <b>{% trans "Another Landline No. (If exist):" %}</b>{{form.landline2|attr:'max:99999999'|attr:'maxlength:8'|add_class:"form-control" }}</div><span class="error_message">{{form.landline2.errors}}</span>
 
         <div class="form-group"> <b>{% trans "Headmaster's Mobile Number :" %}</b>
         <input id="mobile" name="mobile" value="{{mobile}}"class="form-control" onclick="validateMobNo(mobile.value);"  onblur="validateMobNo(mobile.value);" onclick="select()" type="text"></div><span class="error_message">{{form.mobile.errors}}</span>

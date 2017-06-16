@@ -146,8 +146,8 @@
       <tr>
       <td valign="TOP">
         <table style="margin-left:10px"><tr> <td style="border:0px;" > Gender </td><td style="border:0px;" > : &nbsp;&nbsp;&nbsp;{{ teacher.gender |upper }} </td> </tr>
-            <tr> <td  > Date of Birth </td><td  > : &nbsp;&nbsp;&nbsp;{{ teacher.dob |upper}} </td> </tr>
-            <tr> <td  > Date of Retirement </td><td  > : &nbsp;&nbsp;&nbsp;{{ teacher.dor |upper }} </td> </tr>
+            <tr> <td  > Date of Birth </td><td  > : &nbsp;&nbsp;&nbsp;{{ teacher.dob  |date:"d-m-Y"}} </td> </tr>
+            <tr> <td  > Date of Retirement </td><td  > : &nbsp;&nbsp;&nbsp;{{ teacher.dor |date:"d-m-Y" }} </td> </tr>
            
             
 
@@ -182,28 +182,28 @@
                 <td valign="TOP">
         <table style="margin-left:10px">
 
-            <tr> <td  > Date of Appointment in Government Service / Designation </td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.dofags %} {{ teacher.dofags |upper }} -- {{ teacher.designation_fags |upper }}  {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Appointment in Government Service / Designation </td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.dofags %} {{ teacher.dofags  |date:"d-m-Y" }} -- {{ teacher.designation_fags |upper }}  {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
            
 
-            <tr> <td  > Date of  Appointment in School Education Department </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.dofsed %} {{ teacher.dofsed |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td style="border:0px;" > Date of Joining to Present School / Office </td><td style="border:0px;" > : &nbsp;&nbsp;&nbsp;{{ teacher.dojocs |upper }} - {{teacher.dojocs_session | upper}} </td> </tr>
+            <tr> <td  > Date of  Appointment in School Education Department </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.dofsed %} {{ teacher.dofsed  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td style="border:0px;" > Date of Joining to Present School / Office </td><td style="border:0px;" > : &nbsp;&nbsp;&nbsp;{{ teacher.dojocs  |date:"d-m-Y" }} - {{teacher.dojocs_session | upper}} </td> </tr>
 
-            <tr> <td  > Date of Regularisation  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.doregu %} {{ teacher.doregu |upper }} / {{teacher.doregu_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td  >Date of Probation  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.doprob %} {{ teacher.doprob |upper }}  / {{teacher.doprob_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Regularisation  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.doregu %} {{ teacher.doregu  |date:"d-m-Y" }} / {{teacher.doregu_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  >Date of Probation  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.doprob %} {{ teacher.doprob  |date:"d-m-Y" }}  / {{teacher.doprob_session}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td  > Month of Increment  </td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.increment_month %} {{ teacher.increment_month |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td  > Passport No. </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.passport_no %} {{ teacher.passport_no  |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td  > Date of Passport Issued on</td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.passport_date_from %} {{ teacher.passport_date_from |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Passport Issued on</td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.passport_date_from %} {{ teacher.passport_date_from  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td  > Date of Passport Expiry on </td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.passport_date_to %} {{ teacher.passport_date_to |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Passport Expiry on </td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.passport_date_to %} {{ teacher.passport_date_to  |date:"d-m-Y" }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
             <tr> <td  > Differently Abled </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.differently_abled_type %} {{ teacher.differently_abled_type |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
-            <tr> <td  > Date of Appointment in Aided School  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.appointed_aided_date %} {{ teacher.appointed_aided_date |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Appointment in Aided School  </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.appointed_aided_date %} {{ teacher.appointed_aided_date  |date:"d-m-Y" }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td  > Minority Language </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.language_test %} {{ teacher.language_test |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td  > Date of Certificate Evaluation </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.evaluation_date %} {{ teacher.evaluation_date |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
-            <tr> <td  > Date of Unit Transfer </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.uta_date %} {{ teacher.uta_date |upper }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Certificate Evaluation </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.evaluation_date %} {{ teacher.evaluation_date  |date:"d-m-Y" }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
+            <tr> <td  > Date of Unit Transfer </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.uta_date %} {{ teacher.uta_date  |date:"d-m-Y"}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
 
             <tr> <td  > Typing Tamil Junior</td><td  > : &nbsp;&nbsp;&nbsp;{% if teacher.tamil_jr %}  Yes   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
             <tr> <td  >  Typing English Junior </td><td  > : &nbsp;&nbsp;&nbsp; {% if teacher.eng_jr %} {{ teacher.eng_jr }}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %} </td> </tr>
@@ -242,8 +242,8 @@
         <td> {{ i.school_name1|upper}}</td>
         <td> {{ i.district|upper }}</td>
         <td> {{ i.type_of_posting |upper }}</td>
-        <td> {{ i.period_from|upper }}</td>
-        <td> {{ i.period_to|upper }}</td>
+        <td> {{ i.period_from |date:"d-m-Y" }}</td>
+        <td> {{ i.period_to |date:"d-m-Y" }}</td>
     </tr>
     {% endfor %}
     </table>
@@ -268,8 +268,8 @@
   <td align="center">{{forloop.counter}}</td> 
     <td> {{ i.designation.designation |upper }}</td>
   <td> {{ i.order_no|upper }}</td>
-  <td> {{ i.order_date|upper }}</td>
-  <td> {{ i.date_of_regularisation|upper }}</td>
+  <td> {{ i.order_date |date:"d-m-Y" }}</td>
+  <td> {{ i.date_of_regularisation |date:"d-m-Y" }}</td>
   </tr>
   {% endfor %}
   </table>
@@ -294,8 +294,8 @@
   <td align="center">{{forloop.counter}}</td> 
      <td> {{ i.designation.designation|upper  }}</td>        
         <td> {{ i.order_no|upper }}</td>
-        <td> {{ i.order_date|upper }}</td>
-        <td> {{ i.date_of_clearance|upper }}</td>
+        <td> {{ i.order_date |date:"d-m-Y" }}</td>
+        <td> {{ i.date_of_clearance |date:"d-m-Y" }}</td>
     
   </tr>
   {% endfor %}
@@ -324,10 +324,10 @@
   <td align="center">{{forloop.counter}}</td> 
   <td align="center"> {{ i.current_designation.designation|upper }}</td>
   <td align="center"> {{ i.promoted_to|upper }}</td>
-  <td align="center"> {{ i.date_of_relinqui|upper }}</td>
+  <td align="center"> {{ i.date_of_relinqui |date:"d-m-Y" }}</td>
   <td align="center"> {{ i.order_no|upper }}</td>
-  <td align="center"> {{ i.crucial_date_for_promotion|upper }}</td>
-  <td align="center"> {{ i.promo_next_eligible_date|upper }}</td>
+  <td align="center"> {{ i.crucial_date_for_promotion |date:"d-m-Y" }}</td>
+  <td align="center"> {{ i.promo_next_eligible_date |date:"d-m-Y" }}</td>
   </tr>
   {% endfor %}
   </table>
@@ -387,8 +387,8 @@
         <td> {{ i.institution|upper }}</td> 
         <td> {{ i.city|upper }}</td> 
         <td> {{ i.country|upper }}</td> 
-        <td> {{ i.duration_from|upper }}</td> 
-        <td> {{ i.duration_to|upper }}</td> 
+        <td> {{ i.duration_from |date:"d-m-Y" }}</td> 
+        <td> {{ i.duration_to |date:"d-m-Y" }}</td> 
               </tr>
               {% endfor %}
             </table>
@@ -419,7 +419,7 @@
         <td> {{ i.year }}</td> 
         <td> {{ i.reg_no|upper }}</td> 
         <td> {{ i.gaz_no |upper}}</td> 
-        <td> {{ i.gaz_date|upper }}</td> 
+        <td> {{ i.gaz_date |date:"d-m-Y" }}</td> 
         <td> {{ i.page_no }}</td> 
  
   </tr>
@@ -445,7 +445,7 @@
   <tr>
   <td align="center">{{forloop.counter}}</td> 
  <td> {{ i.name |upper }}</td> 
-        <td> {{ i.dob|upper }}</td> 
+        <td> {{ i.dob |date:"d-m-Y" }}</td> 
         <td> {{ i.relation |upper}}</td>
         <td> {{ i.aadhaar_number}}</td>
         <td> {% if i.spou_gov == "yes" %} {{ i.district |upper}}   {% else %} &nbsp;&nbsp;&nbsp;- {% endif %}
@@ -475,7 +475,7 @@
         <td> {{ i.leave_from|upper }}</td> 
         <td> {{ i.leave_to|upper }}</td> 
         <td> {{ i.order_no|upper }}</td> 
-        <td> {{ i.order_date|upper }}</td> 
+        <td> {{ i.order_date |date:"d-m-Y" }}</td> 
  
   </tr>
   {% endfor %}
@@ -500,11 +500,11 @@
   <tr>
   <td align="center">{{forloop.counter}}</td> 
   
-        <td> {{ i.surrender_date|upper }}</td> 
+        <td> {{ i.surrender_date |date:"d-m-Y"}}</td> 
         <td> {{ i.current_balance_days|upper }}</td> 
         <td> {{ i.no_of_days|upper }}</td> 
         <td> {{ i.order_no|upper }}</td> 
-        <td> {{ i.order_date|upper }}</td> 
+        <td> {{ i.order_date |date:"d-m-Y" }}</td> 
 
   </tr>
   {% endfor %}
@@ -538,7 +538,7 @@
       {% if i.nominee_name_id == None %}
         <td> {{ i.other_nominee |upper}}</td>
         {% else %}
-        <td> {{ i.nominee_name.name|upper}}-{{i.nominee_name.relation|upper}}-{{i.nominee_name.dob |upper}}</td> 
+        <td> {{ i.nominee_name.name|upper}}-{{i.nominee_name.relation|upper}}-{{i.nominee_name.dob  |date:"d-m-Y"}}</td> 
          {% endif %}
              <td> {{ i.percentage }}</td> 
         <td> {{ i.nom_dt |upper}}</td>     
@@ -576,9 +576,9 @@
         <td> {{ i.sanctioned_amt |upper }}</td> 
         <td> {{ i.installments |upper }}</td>
         <td> {{ i.monthly_installment }}</td>
-        <td> {{ i.first_insta_date |upper }}</td> 
+        <td> {{ i.first_insta_date  |date:"d-m-Y" }}</td> 
         <td> {{ i.sanctioned_order  |upper}}</td> 
-        <td> {{ i.sanctioned_date|upper }}</td> 
+        <td> {{ i.sanctioned_date |date:"d-m-Y" }}</td> 
 
   </tr>
   {% endfor %}
@@ -608,9 +608,9 @@
   <td> {{ i.sanctioned_amt }}</td> 
         <td> {{ i.installments }}</td> 
         <td> {{ i.monthly_installment }}</td> 
-        <td> {{ i.first_insta_date|upper }}</td> 
+        <td> {{ i.first_insta_date |date:"d-m-Y" }}</td> 
         <td> {{ i.sanctioned_order|upper }}</td> 
-        <td> {{ i.sanctioned_date|upper }}</td> 
+        <td> {{ i.sanctioned_date |date:"d-m-Y"}}</td> 
   </tr>
   {% endfor %}
   
@@ -639,9 +639,9 @@
  <td> {{ i.prop_description|upper }}</td>
         <td> {{ i.purchase_value }}</td>
         <td> {{ i.source|upper }}</td>        
-        <td> {{ i.purchase_doc_date|upper }}</td>
+        <td> {{ i.purchase_doc_date |date:"d-m-Y" }}</td>
         <td> {{ i.present_value }}</td>       
-        <td> {{ i.order_date|upper }}</td>
+        <td> {{ i.order_date |date:"d-m-Y" }}</td>
     
   </tr>
   {% endfor %}
@@ -671,13 +671,13 @@
   <td align="center">{{forloop.counter}}</td> 
     <td> {{ i.prop_description|upper }}</td>
         <td> {{ i.doc_number |upper}}</td>
-        <td> {{ i.doc_date|upper }}</td>
+        <td> {{ i.doc_date |date:"d-m-Y" }}</td>
         <td> {{ i.place|upper }}</td>
         <td> {{ i.acquired_source |upper}}</td>
         <td> {{ i.purchase_value }}</td>
         <td> {{ i.present_value }}</td>
         <td> {{ i.order_no |upper}}</td>
-        <td> {{ i.order_date|upper }}</td>
+        <td> {{ i.order_date |date:"d-m-Y"}}</td>
     
   </tr>
   {% endfor %}
@@ -708,13 +708,13 @@
   <td align="center">{{forloop.counter}}</td> 
   
          <td> {{ i.block_yeear }}</td>
-        <td> {{ i.leave_from }}</td>
-        <td> {{ i.leave_to }}</td>
+        <td> {{ i.leave_from  |date:"d-m-Y" }}</td>
+        <td> {{ i.leave_to  |date:"d-m-Y"}}</td>
         <td> {{ i.destination_type }}</td>
         <td> {{ i.leave_type }}</td>
         <td> {{ i.sanction_amt }}</td>
     <td> {{ i.sanction_order |upper}}</td>
-    <td> {{ i.sanction_date }}</td>
+    <td> {{ i.sanction_date  |date:"d-m-Y" }}</td>
   </tr>
   {% endfor %}
   </table>
@@ -743,7 +743,7 @@
   <td align="center"> {{ i.post_name_charge_committed.designation }}</td>
    <td align="center"> {{ i.gist }}</td>
   <td align="center"> {{ i.charge_memo_number }}</td>
-  <td align="center"> {{ i.charge_memo_date }}</td>
+  <td align="center"> {{ i.charge_memo_date  |date:"d-m-Y" }}</td>
  
   <td align="center"> {{ i.type_charge_memo }}</td>
    <td align="center">

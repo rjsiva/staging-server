@@ -104,8 +104,11 @@ function AfterDate(val)
   <div class="content">
 <center>
 <h3>TRANSFER TO COMMON POOL</h3>
-<br>
-<h1><font color='white'> Staff-ID : {{ transfer_data.count }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Name : {{transfer_data.name|upper }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Designation : {{transfer_data.designation|upper }}</font></h1><br>
+<br><table cellspacing=15 cellpadding=15><tr bgcolor='gray'>
+<td> Staff-ID : {{ transfer_data.count }}</td>
+<td>Name : {{transfer_data.name|upper }}</td>
+<td>Designation : {{transfer_data.designation|upper }}</td>
+</tr></table></font></h1><br>
 
 
 
@@ -125,7 +128,6 @@ function AfterDate(val)
 <input type="hidden" name="dategovt" id="dategovt"  value="{{ dategovt }}">
  
   
-
  <div class="form-group"> <b>{% trans "Mode of Transfer" %}</b>
 <select name="reason" class="form-control" id="reason" |add_class:"mandatory" onchange="enableControl()">
                   

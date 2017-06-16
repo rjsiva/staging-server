@@ -16,7 +16,6 @@
   
 <link href="/site_media/static/css/bootstrap.css" rel="stylesheet" type="text/css" />
 
-
  {% endblock %}
 
 {% block content %}
@@ -71,8 +70,8 @@
  
 
   
-{% for i in transfer_data %}
-{% if i.transfer_flag == "Yes" %}
+{% for i in transfer_data1 %}
+
     <tr>
            
         
@@ -81,7 +80,7 @@
     <td>{{ i.name|upper }} </td>
   
     <td><a href="/teachers/avail_teac_namelist/{{i.id}}/{{new_school_id}}"><button type="button" class="btn btn-success">Transfer</button></a></td>
-    {% endif %}
+   
     {% endfor %}
     </tr>
     

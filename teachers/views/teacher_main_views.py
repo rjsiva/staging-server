@@ -104,22 +104,22 @@ def aeoentrycheck(id_no):
     return AEOENTRY
 
 
-class Teacher_registration(View):
-    #@never_cache
-    def get(self,request,**kwargs):
-        if request.user.is_authenticated():
-            teachers_name_list_new=Teacher_detail.objects.all()
-            return render(request,'teachers/teachers_post_list.html',locals())
-        else:
-            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+# class Teacher_registration(View):
+#     #@never_cache
+#     def get(self,request,**kwargs):
+#         if request.user.is_authenticated():
+#             teachers_name_list_new=Teacher_detail.objects.all()
+#             return render(request,'teachers/teachers_post_list.html',locals())
+#         else:
+#             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
-class Teacher_personnel_entry(View):
+# class Teacher_personnel_entry(View):
     #@never_cache
-    def get(self,request,**kwargs):
-        if request.user.is_authenticated():
-            return render(request,'teachers/teacher_registration.html',locals())
-        else:
-            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    # def get(self,request,**kwargs):
+    #     if request.user.is_authenticated():
+    #         return render(request,'teachers/teacher_registration.html',locals())
+    #     else:
+    #         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 
 class Teacher_personnel_entry_after(View):
@@ -127,16 +127,40 @@ class Teacher_personnel_entry_after(View):
    def get(self, request,**kwargs):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
-            data=Teacher_detail.objects.get(id=tid)
-            basic_det=Basicinfo.objects.get(school_id=data.school_id)
-            if request.user.account.associated_with=='state' or request.user.account.associated_with=='DIPE' or request.user.account.associated_with=='CIPE' or request.user.account.associated_with=='Zone' or request.user.account.associated_with=='IAS' or request.user.account.associated_with=='IMS' :
-                AEOENTRY=0
+
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                instance = Teacher_detail.objects.get(id=tid)
             else:
-                AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)   
-            request.session['staffid']=data.id
-            request.session['staffuid']=data.count
-            request.session['staffname']=data.name
-            return render(request,'teachers/teacher_registration.html',locals())        
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+           
+            basic_det=Basicinfo.objects.get(school_id=instance.school_id)
+            try:
+
+                if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                    
+                    data=Teacher_detail.objects.get(id=tid)
+                    
+                    basic_det=Basicinfo.objects.get(school_id=data.school_id)
+                    if request.user.account.associated_with=='state' or request.user.account.associated_with=='DIPE' or request.user.account.associated_with=='CIPE' or request.user.account.associated_with=='Zone' or request.user.account.associated_with=='IAS' or request.user.account.associated_with=='IMS' :
+                        AEOENTRY=0
+                    else:
+                        AEOENTRY=teacher_main_views.aeoentrycheck(request.user.account.associated_with)   
+                    request.session['staffid']=data.id
+                    request.session['staffuid']=data.count
+                    request.session['staffname']=data.name
+                    return render(request,'teachers/teacher_registration.html',locals())  
+                else:
+                    messages.info(request, 'You can not  view the details')
+                    return HttpResponseRedirect('/teachers/teacher_detailListView/')
+                        
+            except:
+                messages.info(request, 'Record  Does not Exist')
+                return HttpResponseRedirect('/teachers/teacher_detailListView/')
+
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -151,13 +175,13 @@ class Teachers_unique_id_generation(View):
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
-class Teachers_block_level_reports(View):
-    #@never_cache
-    def get(self,request,**kwargs):
-        if request.user.is_authenticated():
-            return render(request,'teachers/block_level_report_home.html',locals())
-        else:
-            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+# class Teachers_block_level_reports(View):
+#     #@never_cache
+#     def get(self,request,**kwargs):
+#         if request.user.is_authenticated():
+#             return render(request,'teachers/block_level_report_home.html',locals())
+#         else:
+#             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
 class School_scale_register_entry(View):
     #@never_cache
@@ -218,88 +242,118 @@ class Teachers_school_level_name_list(View):
             management_cate_id_list=[1,2]
             management_id_list=[1,2,3,4,5,6,7,8,9,10,32]
             sch_cate_id_list=[8,9,10,11,12,13]
-        
+                   
             school_code=self.kwargs.get('pk') 
-            basic_det=Basicinfo.objects.get(udise_code=school_code)
-          
-            if request.user.account.user_category_id == 2:
-                        
-                teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
-            elif request.user.account.user_category_id > 18:
-                teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
-            elif request.user.account.user_category_id == 18:
-                if not(basic_det.office_code):                        
-                    teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
-                else:
-                    teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.udise_code).filter(ofs_flag=False).filter(transfer_flag='No')
-            elif request.user.account.user_category_id == 3:
-                sc=scale_register_abstract.objects.all()
-                for i in sc:
-                    code=i.udise_code
-                sc=Basicinfo.objects.get(udise_code=code)
-                       
-                teachers_name_list_new = Teacher_detail.objects.filter(school_id=sc.id).filter(ofs_flag=False).filter(transfer_flag='No')
-            
-            else:
-                teachers_name_list_new = Teacher_detail.objects.filter(school_id=request.user.account.associated_with).filter(ofs_flag=False).filter(transfer_flag='No')
-            if basic_det:
-                    basic_det=Basicinfo.objects.get(udise_code=school_code)
-                    sch_key = basic_det.id
-                    if (basic_det.offcat_id):
-                        off_cat=int(basic_det.offcat_id)
-                    if basic_det.manage_cate_id:
-                        private_mgnt=int(basic_det.manage_cate_id)
-                    if basic_det.sch_management_id:
-                        sch_mgnt=int(basic_det.sch_management_id)
-                    if basic_det.sch_cate_id:
-                        pups_pums=int(basic_det.sch_cate_id)
-                                       
-                    if off_cat not in offcat_id_list:
-                        check1=1
+            print '__________________'
+            print school_code
+             # if not sample.isdigit():
+            #     if sample==basic_det.authenticate_1:
+            #         print 'ok'
+            #     else:
+            #         print 'not ok'
+            print request.user.username
+            print request.user
+            print request.user.account.associated_with
 
-                    if check1==1:
-                        if private_mgnt==1:
-                            for item in management_id_list:
-                                if item==sch_mgnt:
-                                    check3=1
-                            if check3==1:
-                                if pups_pums in sch_cate_id_list:
-                                    AEOENTRY=1
+            print '--------------'
+            if (Basicinfo.objects.filter(udise_code=school_code)).count()>0:
+                basic_det=Basicinfo.objects.get(udise_code=school_code)
+                print basic_det.office_code
+                if str(basic_det.office_code)==str(request.user) or str(school_code)==str(request.user):
 
-                        elif private_mgnt==2:
-                            if pups_pums in sch_cate_id_list:
-                                    AEOENTRY=1
-            if request.user.account.user_category_id==18:
-                AEOENTRY=0
-            teacher_count=teachers_name_list_new.count()
-            if teacher_count==0:
-                messages.warning(request, 'No data')
-                if request.user.account.associated_with=='state' or request.user.account.associated_with=='DIPE' or request.user.account.associated_with=='CIPE' or request.user.account.associated_with=='Zone' or request.user.account.associated_with=='IAS' or request.user.account.associated_with=='IMS' or request.user.account.user_category_id > 18:
-                    return HttpResponseRedirect('/teachers/staff_detailListView/')
-                elif request.user.account.user_category_id == 18:
-                    if basic_det.office_code==None:
-                        return redirect('teacher_detailListView',cat_id=basic_det.school_id)
+                
+                
+
+              
+                    if request.user.account.user_category_id == 2:
+                                
+                        teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
+                    elif request.user.account.user_category_id > 18:
+                        teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
+                    elif request.user.account.user_category_id == 18:
+                        if not(basic_det.office_code):                        
+                            teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
+                        else:
+                            teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.udise_code).filter(ofs_flag=False).filter(transfer_flag='No')
+                    elif request.user.account.user_category_id == 3:
+                        sc=scale_register_abstract.objects.all()
+                        for i in sc:
+                            code=i.udise_code
+                        sc=Basicinfo.objects.get(udise_code=code)
+                               
+                        teachers_name_list_new = Teacher_detail.objects.filter(school_id=sc.id).filter(ofs_flag=False).filter(transfer_flag='No')
+                    
                     else:
-                        return HttpResponseRedirect('/teachers/staff_detailListView/')
+                        teachers_name_list_new = Teacher_detail.objects.filter(school_id=request.user.account.associated_with).filter(ofs_flag=False).filter(transfer_flag='No')
+                    if basic_det:
+                            basic_det=Basicinfo.objects.get(udise_code=school_code)
+                            sch_key = basic_det.id
+                            if (basic_det.offcat_id):
+                                off_cat=int(basic_det.offcat_id)
+                            if basic_det.manage_cate_id:
+                                private_mgnt=int(basic_det.manage_cate_id)
+                            if basic_det.sch_management_id:
+                                sch_mgnt=int(basic_det.sch_management_id)
+                            if basic_det.sch_cate_id:
+                                pups_pums=int(basic_det.sch_cate_id)
+                                               
+                            if off_cat not in offcat_id_list:
+                                check1=1
+
+                            if check1==1:
+                                if private_mgnt==1:
+                                    for item in management_id_list:
+                                        if item==sch_mgnt:
+                                            check3=1
+                                    if check3==1:
+                                        if pups_pums in sch_cate_id_list:
+                                            AEOENTRY=1
+
+                                elif private_mgnt==2:
+                                    if pups_pums in sch_cate_id_list:
+                                            AEOENTRY=1
+                    if request.user.account.user_category_id==18:
+                        AEOENTRY=0
+                    teacher_count=teachers_name_list_new.count()
+                    if teacher_count==0:
+                        messages.warning(request, 'No data')
+                        if request.user.account.associated_with=='state' or request.user.account.associated_with=='DIPE' or request.user.account.associated_with=='CIPE' or request.user.account.associated_with=='Zone' or request.user.account.associated_with=='IAS' or request.user.account.associated_with=='IMS' or request.user.account.user_category_id > 18:
+                            if basic_det.school_id==int(school_code):
+
+                                return HttpResponseRedirect('/teachers/staff_detailListView/')
+                            else:
+                                messages.info(request,'You cannot view other office details')
+                        elif request.user.account.user_category_id == 18:
+                            if basic_det.office_code==None:
+                                return redirect('teacher_detailListView',cat_id=basic_det.school_id)
+                            else:
+                                return HttpResponseRedirect('/teachers/staff_detailListView/')
+                        else:
+                            return HttpResponseRedirect('/teachers/teacher_detailListView/')
+                    superannum={}
+                    for i in teachers_name_list_new:
+                       
+                        if i.super_annum_flag ==False :
+                         
+                            dor=i.dor
+                            dorfmt=i.dor.strftime("%d/%m/%Y")
+                            d1 = datetime.strptime(dorfmt, "%d/%m/%Y")
+                            
+                            t=datetime.now()
+                            today=t.strftime("%d/%m/%Y")
+                            tod=datetime.strptime(today, "%d/%m/%Y")
+                            
+                            diff=d1-tod
+                            superannum[i.id] = diff.days
+                        flag=i.school_office
+                    return render(request,'teachers/teachers_name_list.html',locals())
+
                 else:
-                    return HttpResponseRedirect('/teachers/teacher_detailListView/')
-            superannum={}
-            for i in teachers_name_list_new:
-               
-                if i.super_annum_flag ==False :
-                 
-                    dor=i.dor
-                    dorfmt=i.dor.strftime("%d/%m/%Y")
-                    d1 = datetime.strptime(dorfmt, "%d/%m/%Y")
-                    
-                    t=datetime.now()
-                    today=t.strftime("%d/%m/%Y")
-                    tod=datetime.strptime(today, "%d/%m/%Y")
-                    
-                    diff=d1-tod
-                    superannum[i.id] = diff.days
-                flag=i.school_office
-            return render(request,'teachers/teachers_name_list.html',locals())
+                    messages.info(request,'You cannot view other office records')    
+                    return HttpResponseRedirect('/')
+            else:
+                messages.info (request,'Check your Login ')
+                return HttpResponseRedirect('/')
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
         
@@ -591,136 +645,163 @@ class Teacher_update(View):
     #@never_cache
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
-            tid=self.kwargs.get('pk')
-            instance = Teacher_detail.objects.get(id=tid)
-            
-            desig=instance.designation
-            p_desg=User_desig.objects.get(user_desig=desig)
-            
-            service_type= p_desg.ser_type
-            sub_staff=instance.subject
-            sch_code= instance.school_id 
-            post_go_id = instance.post_go_id
-            basic_det=Basicinfo.objects.get(school_id=sch_code)      
-            form = Teacher_detailform(instance=instance)
-            count=instance.count
-            photo = instance.uploadfile
-            name = instance.name  
-            dob = instance.dob
-            dor = instance.dor
-            gender=instance.gender
-            management = instance.management  
-
-            designation= instance.designation.id
-            subject= instance.subject.id
-
-            stafs =instance.stafs  
-            mother_name = instance.mother_name  
-            father_name =  instance.father_name  
-            marital = instance.marital  
-            spouse_name = instance.spouse_name   
-            religion_value = instance.religion   
-            community=instance.community  
-            sub_caste = instance.sub_caste  
-            mothertongue = instance.mothertongue  
-            native_district = instance.native_district  
-            imark1 = instance.imark1  
-            imark2 = instance.imark2  
-            bg =instance.blood_group  
-            height = instance.height  
-            weight = instance.weight  
-            email = instance.email  
-            phone_number =instance.phone_number  
-            landline=instance.landline
-            pan_number = instance.pan_number  
-            aadhaar_number = instance.aadhaar_number  
-            health_number =instance.health_number 
-            bank_dist = instance.bank_dist
-            school_office=instance.school_office
-            bank = instance.bank  
-            branch = instance.branch  
-            bank_account_no = instance.bank_account_no  
-            passport = instance.passport  
-            passport_no = instance.passport_no  
-            passport_date_from = instance.passport_date_from  
-            passport_date_to = instance.passport_date_to 
-            pres_add_flatno=instance.pres_add_flatno
-            pres_add_street=instance.pres_add_street
-            pres_add_area=instance.pres_add_area
-            pres_add_city=instance.pres_add_city
-            present_district=instance.present_district
-            present_pincode=instance.present_pincode
-            perm_add_flatno=instance.perm_add_flatno
-            perm_add_street=instance.perm_add_street
-            perm_add_area=instance.perm_add_area
-            perm_add_city=instance.perm_add_city
-            permanent_pincode =instance.permanent_pincode
-            p_name = instance.pension_name  
-            
-            q = instance.pension_number  
-            a=q.split('/')
-            pension_number=a[0]
-            suf_name=a[1]
-            
-            designation = instance.designation  
-            subject = instance.subject  
-            dofags = instance.dofags  
-            designation_fags = instance.designation_fags   
-            dofsed = instance.dofsed  
-            dojocs=instance.dojocs
-            dojocs_session=instance.dojocs_session
-            topocs=instance.topocs
-            designation_fased_value = instance.designation_fased  
-            
-            a=User_desig.objects.get(id=designation_fased_value)
-            designation_fased_value_text=a.user_desig
-            doregu = instance.doregu  
-            doregu_session = instance.doregu_session  
-            uta = instance.uta  
-            uta_date = instance.uta_date  
-            uta_order_no= instance.uta_order_no  
-            doprob = instance.doprob  
-            doprob_session = instance.doprob_session  
-            
-            typewite_skill_level = instance.typewite_skill_level  
-            tamil_jr = instance.tamil_jr
-            tamil_sr = instance.tamil_sr
-            eng_jr = instance.eng_jr
-            eng_sr = instance.eng_sr
-            
-            emp_status = instance.employment_status 
-
-            teacher_differently_abled=instance.teacher_differently_abled
-            differently_abled_type=instance.differently_abled_type
+            tid=int(self.kwargs.get('pk'))
+            sample=str(request.user)
+            print sample
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                instance = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
 
             
-            appointed_aided = instance.appointed_aided
-            appointed_aided_date=instance.appointed_aided_date
-            approval_aided_date = instance.approval_aided_date 
-            aided_order_no = instance.aided_order_no  
-            pay = instance.pay_drawing_officer  
-            increment = instance.increment_month  
-            language_test = instance.language_test  
-            evaluation = instance.evaluation  
-            evaluation_date = instance.evaluation_date  
-            eval_order_no = instance.eval_order_no  
-            evaluation_auth=instance.evaluation_auth  
+            basic_det=Basicinfo.objects.get(school_id=instance.school_id)
+            # if not sample.isdigit():
+            #     if sample==basic_det.authenticate_1:
+            #         print 'ok'
+            #     else:
+            #         print 'not ok'
+            # if not(basic_det.office_code): 
 
-            district_list = District.objects.all().exclude(district_name='None').order_by('district_name')
-            language_list = Language.objects.all().exclude(language_name='Undefined').order_by('language_name')
-            religion_list = T_Religion.objects.all().exclude(religion_name='Undefined').order_by('id')
-            community_list = T_Community.objects.all().exclude(community_name='undefined').order_by('id')
-            sub_caste=T_Sub_Castes.objects.all()
-            ban_dist = Bank_district.objects.all()
-            present_district_list=Present_District.objects.all()
-            permanent_district_list=Permanent_District.objects.all()
-            pay_drawing_officer_list=Teacher_pay_officer.objects.all()
-            posting_desg=User_desig.objects.all()
-            post=Posting_type.objects.all()
-            uploadfile=instance.uploadfile
-            photo_file=settings.MEDIA_ROOT+'/' + 'teachers_pics'+'/' + str(count) + ".jpg"
+            #         teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
+            #     else:
+            #         teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.udise_code).filter(ofs_flag=False).filter(transfer_flag='No')
 
-            return render(request,'teachers/teacher_detail_form.html',locals())
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+               
+            
+                desig=instance.designation
+                p_desg=User_desig.objects.get(user_desig=desig)
+                
+                service_type= p_desg.ser_type
+                sub_staff=instance.subject
+                sch_code= instance.school_id 
+                post_go_id = instance.post_go_id
+                basic_det=Basicinfo.objects.get(school_id=sch_code)      
+                form = Teacher_detailform(instance=instance)
+                count=instance.count
+                photo = instance.uploadfile
+                name = instance.name  
+                dob = instance.dob
+                dor = instance.dor
+                gender=instance.gender
+                management = instance.management  
+
+                designation= instance.designation.id
+                subject= instance.subject.id
+
+                stafs =instance.stafs  
+                mother_name = instance.mother_name  
+                father_name =  instance.father_name  
+                marital = instance.marital  
+                spouse_name = instance.spouse_name   
+                religion_value = instance.religion   
+                community=instance.community  
+                sub_caste = instance.sub_caste  
+                mothertongue = instance.mothertongue  
+                native_district = instance.native_district  
+                imark1 = instance.imark1  
+                imark2 = instance.imark2  
+                bg =instance.blood_group  
+                height = instance.height  
+                weight = instance.weight  
+                email = instance.email  
+                phone_number =instance.phone_number  
+                landline=instance.landline
+                pan_number = instance.pan_number  
+                aadhaar_number = instance.aadhaar_number  
+                health_number =instance.health_number 
+                bank_dist = instance.bank_dist
+                school_office=instance.school_office
+                bank = instance.bank  
+                branch = instance.branch  
+                bank_account_no = instance.bank_account_no  
+                passport = instance.passport  
+                passport_no = instance.passport_no  
+                passport_date_from = instance.passport_date_from  
+                passport_date_to = instance.passport_date_to 
+                pres_add_flatno=instance.pres_add_flatno
+                pres_add_street=instance.pres_add_street
+                pres_add_area=instance.pres_add_area
+                pres_add_city=instance.pres_add_city
+                present_district=instance.present_district
+                present_pincode=instance.present_pincode
+                perm_add_flatno=instance.perm_add_flatno
+                perm_add_street=instance.perm_add_street
+                perm_add_area=instance.perm_add_area
+                perm_add_city=instance.perm_add_city
+                permanent_pincode =instance.permanent_pincode
+                p_name = instance.pension_name  
+                
+                q = instance.pension_number  
+                a=q.split('/')
+                pension_number=a[0]
+                suf_name=a[1]
+                
+                designation = instance.designation  
+                subject = instance.subject  
+                dofags = instance.dofags  
+                designation_fags = instance.designation_fags   
+                dofsed = instance.dofsed  
+                dojocs=instance.dojocs
+                dojocs_session=instance.dojocs_session
+                topocs=instance.topocs
+                designation_fased_value = instance.designation_fased  
+                
+                a=User_desig.objects.get(id=designation_fased_value)
+                designation_fased_value_text=a.user_desig
+                doregu = instance.doregu  
+                doregu_session = instance.doregu_session  
+                uta = instance.uta  
+                uta_date = instance.uta_date  
+                uta_order_no= instance.uta_order_no  
+                doprob = instance.doprob  
+                doprob_session = instance.doprob_session  
+                
+                typewite_skill_level = instance.typewite_skill_level  
+                tamil_jr = instance.tamil_jr
+                tamil_sr = instance.tamil_sr
+                eng_jr = instance.eng_jr
+                eng_sr = instance.eng_sr
+                
+                emp_status = instance.employment_status 
+
+                teacher_differently_abled=instance.teacher_differently_abled
+                differently_abled_type=instance.differently_abled_type
+
+                
+                appointed_aided = instance.appointed_aided
+                appointed_aided_date=instance.appointed_aided_date
+                approval_aided_date = instance.approval_aided_date 
+                aided_order_no = instance.aided_order_no  
+                pay = instance.pay_drawing_officer  
+                increment = instance.increment_month  
+                language_test = instance.language_test  
+                evaluation = instance.evaluation  
+                evaluation_date = instance.evaluation_date  
+                eval_order_no = instance.eval_order_no  
+                evaluation_auth=instance.evaluation_auth  
+
+                district_list = District.objects.all().exclude(district_name='None').order_by('district_name')
+                language_list = Language.objects.all().exclude(language_name='Undefined').order_by('language_name')
+                religion_list = T_Religion.objects.all().exclude(religion_name='Undefined').order_by('id')
+                community_list = T_Community.objects.all().exclude(community_name='undefined').order_by('id')
+                sub_caste=T_Sub_Castes.objects.all()
+                ban_dist = Bank_district.objects.all()
+                present_district_list=Present_District.objects.all()
+                permanent_district_list=Permanent_District.objects.all()
+                pay_drawing_officer_list=Teacher_pay_officer.objects.all()
+                posting_desg=User_desig.objects.all()
+                post=Posting_type.objects.all()
+                uploadfile=instance.uploadfile
+                photo_file=settings.MEDIA_ROOT+'/' + 'teachers_pics'+'/' + str(count) + ".jpg"
+
+                return render(request,'teachers/teacher_detail_form.html',locals())
+            else:
+                messages.info(request, 'You cannot edit this data')
+                return HttpResponseRedirect('/')
+            
+            
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     
@@ -881,6 +962,7 @@ class Teacher_delete(View):
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
+
             data=Teacher_detail.objects.get(id=tid)
             return render(request,'teachers/teacher_delete.html',locals())
         else:
@@ -930,6 +1012,7 @@ class school_search10(View):
                             data = json.dumps(results)
                             mimetype = 'application/json'
                             break
+                            
             else:
                 data = 'fail'
                 mimetype = 'application/json'
@@ -942,6 +1025,9 @@ class Teacher_transfer(View):
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
             school_code=self.kwargs.get('pk') 
+            code=self.kwargs.get('code') 
+            office_code=self.kwargs.get('office_code') 
+            print school_code
             basic_det=Basicinfo.objects.get(udise_code=school_code)
             transfer_data = Teacher_detail.objects.filter(school_id=basic_det.school_id)
                 
@@ -959,11 +1045,29 @@ class Teacher_transfer(View):
         if request.user.is_authenticated():
             old_school_name=request.POST['school_name']
             new_school_id=request.POST['new_school_id']
+            code=request.POST['code']
+            office_code=request.POST['office_code']
             data=old_school_name.split("-")
+            if data=='fail':
+                messages.success(request,'No such Record Available')
+                return HttpResponseRedirect('/')
+            # print transfer_data1.count()
             old_school_data = Basicinfo.objects.filter(school_name__icontains = data[1]).filter(udise_code=data[0])
             old_school_id=old_school_data[0].school_id
-            transfer_data = Teacher_detail.objects.filter(school_id=old_school_id)
-
+            transfer_data = Teacher_detail.objects.filter(school_id=old_school_id,transfer_flag='Yes',ofs_flag=False)
+            if transfer_data[0].school_office==1:
+                basic_det=Basicinfo.objects.get(school_id=transfer_data[0].school_id)
+            else:
+                basic_det=Basicinfo.objects.get(udise_code=New_school_id)
+            avail_vac_record=Staff.objects.get(school_key_id=basic_det.id,id=code)
+        
+            transfer_data1=transfer_data.filter(designation_id=avail_vac_record.post_name_id,subject_id=avail_vac_record.post_sub_id)
+            if transfer_data1.count()==0:
+                messages.success(request,'No such Record Available')
+                return HttpResponseRedirect('/')
+            # print transfer_data1.count()
+            # for i in avail_vac_record:
+            #     print i.id,i.post_name,i.post_sub
             return render(request,'teachers/avail_teac_namelist.html',locals())
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
@@ -974,10 +1078,13 @@ class avail_teac_namelist(View):
         if request.user.is_authenticated():
             tid=self.kwargs.get('pk')
             school_code=self.kwargs.get('school_code')
+            
+
             transfer_data=Teacher_detail.objects.filter(id=tid)
+            go=[]
             New_school_id=school_code
             if transfer_data[0].school_office==1:
-                basic_det=Basicinfo.objects.get(school_id=New_school_id)
+                basic_det=Basicinfo.objects.get(school_id=transfer_data[0].school_id)
             else:
                 basic_det=Basicinfo.objects.get(udise_code=New_school_id)
             teaching=Staff.objects.filter(school_key_id=basic_det.id)
@@ -987,14 +1094,15 @@ class avail_teac_namelist(View):
                 if desig.id==transfer_data[0].designation_id :
                     if sub.id==transfer_data[0].subject_id :
                         if i.post_vac > 0:        
+                            go.append(i.post_GO)
                             return render(request,'teachers/teachers_transfer_name_list.html',locals())
                         else :        
                             msg =  "No vaccant post available.Create the post before transfer."
                             messages.success(request, msg )
                             return render(request,'teachers/avail_teac_namelist.html',locals()) 
-            msg =  "No vaccant post available.Create the post before transfer."
-            messages.success(request, msg )
-            return render(request,'teachers/avail_teac_namelist.html',locals()) 
+                    msg =  "No vaccant post available.Create the post before transfer."
+                    messages.success(request, msg )
+                    return render(request,'teachers/avail_teac_namelist.html',locals()) 
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1011,22 +1119,25 @@ class avail_teac_namelist(View):
             else:
                 sch_id_chk = Basicinfo.objects.get(udise_code=New_school_id)
             teaching=Staff.objects.filter(school_key_id=sch_id_chk.id)
-                
+            # c=request.POST['gos']    
             for i in teaching :
                 desig=User_desig.objects.get(id=i.post_name_id)
                 sub=Desig_subjects.objects.get(id=i.post_sub_id)
                 if desig.id==transfer_school_name.designation_id :
                     if sub.id==transfer_school_name.subject_id :
+                 
                         if i.post_sanc==i.post_filled+i.post_vac:
                             i.post_filled=i.post_filled+1
                             i.post_vac=i.post_vac - 1
                             i.save()
+                            transfer_school_name.post_go_id=i.id
+                            
                         else:
                             msg =  "No vaccant post available.Create the post before transfer."
                             messages.success(request, msg)
                             return render(request,'teachers/teachers_transfer_name_list.html',locals())
 
-            if transfer_school_name.udise_code < 33000000000:
+            if sch_id_chk.udise_code < 33000000000:
                 transfer_school_name.school_office=2
             else:
                 transfer_school_name.school_office=1
@@ -1048,7 +1159,7 @@ class avail_teac_namelist(View):
             yymmddformat = datetime.strptime(c,'%d/%m/%Y').strftime('%Y-%m-%d')
 
             tr_records.joining_order_date=yymmddformat
-            tr_records.joining_order_no=request.POST['joining_order_no']
+            tr_records.joining_order_no=request.POST['oining_order_no']
              
             transfer_school_name.school_id=sch_id_chk.school_id
             transfer_school_name.save()
@@ -1067,6 +1178,13 @@ class avail_teac_namelist(View):
                             )
             regular.save()  
             return render(request,'teachers/m.html',locals())
+            b=completed_table.objects.get(teacherid_id=tid)
+            if b.transfer_flag==True:
+                b.id=b.id
+                b.teacherid_id=b.teacherid_id
+                b.transfer_flag=False
+                print 'complete false'
+                b.save()
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1092,7 +1210,13 @@ class Teacher_transfer_parent(View):
             old_school_id=request.POST['old_school_id']
             old_school_data=Basicinfo.objects.filter(school_id=old_school_id)
             tid=self.kwargs.get('pk')
-            transfer_data = Teacher_detail.objects.get(id=tid)
+
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                transfer_data = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
             desig=User_desig.objects.filter()
             teaching=Staff.objects.filter(school_key_id=old_school_data[0].id)
             
@@ -1101,14 +1225,18 @@ class Teacher_transfer_parent(View):
                 sub=Desig_subjects.objects.get(id=i.post_sub_id)
                 if desig.id==transfer_data.designation_id :
                     if sub.id==transfer_data.subject_id :
-                        if i.post_sanc==i.post_filled+i.post_vac:
-                            i.post_filled=i.post_filled-1
-                            i.post_vac=i.post_vac + 1
-                            i.save()
-                        else:
-                            msg =  "No vaccant post available.Create the post before transfer."
-                            messages.success(request, msg)
-                            return render(request,'teachers/teacher_tr_parent.html',locals())
+                        if i.id==transfer_data.post_go_id:
+                            if i.post_sanc==i.post_filled+i.post_vac:
+                                i.post_filled=i.post_filled-1
+                                i.post_vac=i.post_vac + 1
+                                i.save()
+                                print 'staff_table_id'
+                                print i.id
+                                staff_table_id=i.id
+                            else:
+                                msg =  "No vaccant post available.Create the post before transfer."
+                                messages.warning(request, msg)
+                                return render(request,'teachers/teacher_tr_parent.html',locals())
 
             old_subject=transfer_data.subject
 
@@ -1146,9 +1274,16 @@ class Teacher_transfer_parent(View):
 
                 transfer_data.designation_id=Designation_after_transfer
                 transfer_data.subject_id=subject_after_promotion
+                transfer_data.staff_table_id=staff_table_id
                 transfer_data.save()
             else:
                 print form1.errors
+            b=completed_table.objects.get(teacherid_id=tid)
+            if b.transfer_flag==False:
+                b.id=b.id
+                b.teacherid_id=b.teacherid_id
+                b.transfer_flag=True
+                b.save()
 
             basic_det=Basicinfo.objects.get(school_id=old_school_id)
             return redirect('teachers_school_level_name_list',pk=basic_det.udise_code)
@@ -1161,30 +1296,43 @@ class Teacher_full_detail(View):
     def get (self,request,**kwargs):
         if request.user.is_authenticated():
             pk=self.kwargs.get('pk')
-            pups_pums=0
-            teacher = Teacher_detail.objects.get(id=pk)
-            if request.user.account.user_category_id ==2 or request.user.account.user_category_id == 1:
-                basic_det=Basicinfo.objects.get(school_id=teacher.school_id)
-                AEOENTRY=aeoentrycheck(request.user.account.associated_with)
-            elif request.user.account.user_category_id ==18:
-                basic_det=Basicinfo.objects.get(school_id=teacher.school_id) 
+            if (Teacher_detail.objects.filter(id=pk)).count()>0:
+                teacher = Teacher_detail.objects.get(id=pk)
             else:
-                basic_det=Basicinfo.objects.get(school_id=teacher.school_id) 
-            pups_pums=0    
-            if basic_det.sch_cate_id:
-                pups_pums=int(basic_det.sch_cate_id)
-            if pups_pums==8 or pups_pums== 9 or pups_pums==10 or pups_pums==11 or pups_pums==12 or pups_pums==13:
-                if request.user.account.user_category_id ==18:
-                    entry=1
-                else:
-                    entry=0
-            else:
-                entry=1
-        
-            edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
-            school_info=Basicinfo.objects.get(school_id=teacher.school_id)      
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+            basic_det=Basicinfo.objects.get(school_id=teacher.school_id)
+            
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
 
-            return render(request,'teachers/teacher_full_detail.html',locals())
+                
+                pups_pums=0
+                # teacher = Teacher_detail.objects.get(id=pk)
+                if request.user.account.user_category_id ==2 or request.user.account.user_category_id == 1:
+                    basic_det=Basicinfo.objects.get(school_id=teacher.school_id)
+                    AEOENTRY=aeoentrycheck(request.user.account.associated_with)
+                elif request.user.account.user_category_id ==18:
+                    basic_det=Basicinfo.objects.get(school_id=teacher.school_id) 
+                else:
+                    basic_det=Basicinfo.objects.get(school_id=teacher.school_id) 
+                pups_pums=0    
+                if basic_det.sch_cate_id:
+                    pups_pums=int(basic_det.sch_cate_id)
+                if pups_pums==8 or pups_pums== 9 or pups_pums==10 or pups_pums==11 or pups_pums==12 or pups_pums==13:
+                    if request.user.account.user_category_id ==18:
+                        entry=1
+                    else:
+                        entry=0
+                else:
+                    entry=1
+            
+                edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
+                school_info=Basicinfo.objects.get(school_id=teacher.school_id)      
+
+                return render(request,'teachers/teacher_full_detail.html',locals())
+            else:
+                messages.info(request, 'You Dont have this access')
+                return redirect('teachers_school_level_name_list',pk=basic_det.udise_code)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1193,65 +1341,89 @@ class myview(View):
     def get(self,request,**kwargs):   
         if request.user.is_authenticated():
             pk=self.kwargs.get('pk')
-            teacher = Teacher_detail.objects.get(id=pk)
-            school=Basicinfo.objects.get(school_id=teacher.school_id)
-            posting_list = Teacher_posting_entry.objects.filter(teacherid_id=pk)
-            regularasation_list = Teacher_regularisation_entry.objects.filter(teacherid_id=pk)
-            probation_list = Teacher_probation_entry.objects.filter(teacherid_id=pk)
-            training_list = Teacher_training.objects.filter(teacherid_id=pk)
-            testpass_list = Teacher_test.objects.filter(teacherid_id=pk)
-            gpfloan_list = Teacher_GPF_loan.objects.filter(teacherid_id=pk)
-            leave_list = Teacher_leave.objects.filter(teacherid_id=pk)
-            action_list = Teacher_action.objects.filter(teacherid_id=pk)
-            family_list = Teacher_family_detail.objects.filter(teacherid_id=pk)
-            nomini_list = Teacher_nomini.objects.filter(teacherid_id=pk)
-            loan_list = Teacher_loan.objects.filter(teacherid_id=pk)
-            ltc_list = Teacher_ltc.objects.filter(teacherid_id=pk)
-            leavesurr_list = Teacher_leave_surrender.objects.filter(teacherid_id=pk)
-            immovalble_list = Teacher_immovalble_property.objects.filter(teacherid_id=pk)
-            movable_list = Teacher_movable_property.objects.filter(teacherid_id=pk)
-            leavecredit_list = Teacher_leave_credit.objects.filter(teacherid_id=pk)
-            a=teacher.count
-            edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
-            exam_list=Teacher_result_exam.objects.filter(teacherid_id=pk)
-            award_list=Teacher_award.objects.filter(teacherid_id=pk)
-            response = HttpResponse(content_type='application/pdf')
-            filename = str(a)
-            photo=settings.MEDIA_URL
-            root=settings.MEDIA_ROOT
             
-            response['Content-Disposition'] = 'attachement; filename={0}.pdf'.format(filename)
-            pdf=render_to_pdf(
-                    'teachers/printpdf.html',
-                    {
-                        
-                        'teacher':teacher,
-                        'edu_list':edu_list,
-                        'school':school,
-                        'pagesize':'A4',
-                        'MEDIA_URL':root,
-                        'posting_list':posting_list,
-                        'regularasation_list':regularasation_list,
-                        'probation_list':probation_list,
-                        'training_list':training_list,
-                        'testpass_list':testpass_list,
-                        'gpfloan_list':gpfloan_list,
-                        'leave_list':leave_list,
-                        'action_list':action_list,
-                        'family_list':family_list,
-                        'nomini_list':nomini_list,
-                        'loan_list':loan_list,
-                        'ltc_list':ltc_list,
-                        'leavesurr_list':leavesurr_list,
-                        'immovalble_list':immovalble_list,
-                        'movable_list':movable_list,
-                        'leavecredit_list':leavecredit_list,
-                        'exam_list':exam_list,
-                        'award_list':award_list
-                    }
-                )
-            response.write(pdf)
-            return response
+            
+            if (Teacher_detail.objects.filter(id=pk)).count()>0:
+                teacher = Teacher_detail.objects.get(id=pk)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =teacher.school_id 
+            school=Basicinfo.objects.get(school_id=school_id)
+       
+           
+
+
+            # print str(school.udise_code)
+            # print str(request.user) 
+            # print str(school.authenticate_1)
+            # print str(school.office_code)
+            if str(school.udise_code)==str(request.user) or str(school.authenticate_1)==str(request.user) or str(school.office_code)==str(request.user):
+
+
+
+                posting_list = Teacher_posting_entry.objects.filter(teacherid_id=pk)
+                regularasation_list = Teacher_regularisation_entry.objects.filter(teacherid_id=pk)
+                probation_list = Teacher_probation_entry.objects.filter(teacherid_id=pk)
+                training_list = Teacher_training.objects.filter(teacherid_id=pk)
+                testpass_list = Teacher_test.objects.filter(teacherid_id=pk)
+                gpfloan_list = Teacher_GPF_loan.objects.filter(teacherid_id=pk)
+                leave_list = Teacher_leave.objects.filter(teacherid_id=pk)
+                action_list = Teacher_action.objects.filter(teacherid_id=pk)
+                family_list = Teacher_family_detail.objects.filter(teacherid_id=pk)
+                nomini_list = Teacher_nomini.objects.filter(teacherid_id=pk)
+                loan_list = Teacher_loan.objects.filter(teacherid_id=pk)
+                ltc_list = Teacher_ltc.objects.filter(teacherid_id=pk)
+                leavesurr_list = Teacher_leave_surrender.objects.filter(teacherid_id=pk)
+                immovalble_list = Teacher_immovalble_property.objects.filter(teacherid_id=pk)
+                movable_list = Teacher_movable_property.objects.filter(teacherid_id=pk)
+                leavecredit_list = Teacher_leave_credit.objects.filter(teacherid_id=pk)
+                a=teacher.count
+                edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
+                exam_list=Teacher_result_exam.objects.filter(teacherid_id=pk)
+                award_list=Teacher_award.objects.filter(teacherid_id=pk)
+                response = HttpResponse(content_type='application/pdf')
+                filename = str(a)
+                photo=settings.MEDIA_URL
+                root=settings.MEDIA_ROOT
+                
+                response['Content-Disposition'] = 'attachement; filename={0}.pdf'.format(filename)
+                pdf=render_to_pdf(
+                        'teachers/printpdf.html',
+                        {
+                            
+                            'teacher':teacher,
+                            'edu_list':edu_list,
+                            'school':school,
+                            'pagesize':'A4',
+                            'MEDIA_URL':root,
+                            'posting_list':posting_list,
+                            'regularasation_list':regularasation_list,
+                            'probation_list':probation_list,
+                            'training_list':training_list,
+                            'testpass_list':testpass_list,
+                            'gpfloan_list':gpfloan_list,
+                            'leave_list':leave_list,
+                            'action_list':action_list,
+                            'family_list':family_list,
+                            'nomini_list':nomini_list,
+                            'loan_list':loan_list,
+                            'ltc_list':ltc_list,
+                            'leavesurr_list':leavesurr_list,
+                            'immovalble_list':immovalble_list,
+                            'movable_list':movable_list,
+                            'leavecredit_list':leavecredit_list,
+                            'exam_list':exam_list,
+                            'award_list':award_list
+                        }
+                    )
+                response.write(pdf)
+                return response
+            else:
+                messages.info(request, 'You cannot edit this data')
+                return redirect('teachers_school_level_name_list',pk=school.udise_code)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1271,17 +1443,30 @@ class Teacher_full_detail_more(View):
     def get (self,request,**kwargs):
         if request.user.is_authenticated():
             pk=self.kwargs.get('pk')
-            edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
-            posting_list = Teacher_posting_entry.objects.filter(teacherid_id=pk)
-            regularasation_list = Teacher_regularisation_entry.objects.filter(teacherid_id=pk)
-            probation_list = Teacher_probation_entry.objects.filter(teacherid_id=pk)
-            training_list = Teacher_training.objects.filter(teacherid_id=pk)
-            testpass_list = Teacher_test.objects.filter(teacherid_id=pk)
-            gpfloan_list = Teacher_GPF_loan.objects.filter(teacherid_id=pk)
-            leave_list = Teacher_leave.objects.filter(teacherid_id=pk)
-            teacher = Teacher_detail.objects.get(id=pk)
+            if (Teacher_detail.objects.filter(id=pk)).count()>0:
+                teacher = Teacher_detail.objects.get(id=pk)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
             basic_det=Basicinfo.objects.get(school_id=teacher.school_id)
-            return render(request,'teachers/teacher_full_detail2.html',locals())
+            
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+
+                edu_list = Teacher_edu.objects.filter(teacherid_id=pk)
+                posting_list = Teacher_posting_entry.objects.filter(teacherid_id=pk)
+                regularasation_list = Teacher_regularisation_entry.objects.filter(teacherid_id=pk)
+                probation_list = Teacher_probation_entry.objects.filter(teacherid_id=pk)
+                training_list = Teacher_training.objects.filter(teacherid_id=pk)
+                testpass_list = Teacher_test.objects.filter(teacherid_id=pk)
+                gpfloan_list = Teacher_GPF_loan.objects.filter(teacherid_id=pk)
+                leave_list = Teacher_leave.objects.filter(teacherid_id=pk)
+             
+            
+                return render(request,'teachers/teacher_full_detail2.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return HttpResponseRedirect('/')
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1290,20 +1475,33 @@ class Teacher_full_detail_more1(View):
     def get (self,request,**kwargs):
         if request.user.is_authenticated():
             pk=self.kwargs.get('pk')
-            exam_list=Teacher_result_exam.objects.filter(teacherid_id=pk)
-            award_list=Teacher_award.objects.filter(teacherid_id=pk)
-            action_list = Teacher_action.objects.filter(teacherid_id=pk)
-            family_list = Teacher_family_detail.objects.filter(teacherid_id=pk)
-            nomini_list = Teacher_nomini.objects.filter(teacherid_id=pk)
-            loan_list = Teacher_loan.objects.filter(teacherid_id=pk)
-            ltc_list = Teacher_ltc.objects.filter(teacherid_id=pk)
-            leavesurr_list = Teacher_leave_surrender.objects.filter(teacherid_id=pk)
-            immovalble_list = Teacher_immovalble_property.objects.filter(teacherid_id=pk)
-            movable_list = Teacher_movable_property.objects.filter(teacherid_id=pk)
-            leavecredit_list = Teacher_leave_credit.objects.filter(teacherid_id=pk)
-            teacher = Teacher_detail.objects.get(id=pk)
+            if (Teacher_detail.objects.filter(id=pk)).count()>0:
+                teacher = Teacher_detail.objects.get(id=pk)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
             basic_det=Basicinfo.objects.get(school_id=teacher.school_id)
-            return render(request,'teachers/teacher_full_detail3.html',locals())
+            
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+
+
+                exam_list=Teacher_result_exam.objects.filter(teacherid_id=pk)
+                award_list=Teacher_award.objects.filter(teacherid_id=pk)
+                action_list = Teacher_action.objects.filter(teacherid_id=pk)
+                family_list = Teacher_family_detail.objects.filter(teacherid_id=pk)
+                nomini_list = Teacher_nomini.objects.filter(teacherid_id=pk)
+                loan_list = Teacher_loan.objects.filter(teacherid_id=pk)
+                ltc_list = Teacher_ltc.objects.filter(teacherid_id=pk)
+                leavesurr_list = Teacher_leave_surrender.objects.filter(teacherid_id=pk)
+                immovalble_list = Teacher_immovalble_property.objects.filter(teacherid_id=pk)
+                movable_list = Teacher_movable_property.objects.filter(teacherid_id=pk)
+                leavecredit_list = Teacher_leave_credit.objects.filter(teacherid_id=pk)
+               
+                return render(request,'teachers/teacher_full_detail3.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return HttpResponseRedirect('/')
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
        
@@ -1341,11 +1539,21 @@ class Teacher_entry_details(View):
     def get(self,request,**kwargs):
         if request.user.is_authenticated():
             school_code=self.kwargs.get('pk') 
+
             basic_det=Basicinfo.objects.get(udise_code=school_code)
-            print basic_det.school_id
-            teachers = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(ofs_flag=False).filter(transfer_flag='No')
-            complete=completed_table.objects.filter(school_id=basic_det.school_id) 
-            return render(request,'teachers/teacher_entry_details.html',locals())
+
+
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+
+
+                teachers = Teacher_detail.objects.filter(school_id=basic_det.school_id,ofs_flag=False,transfer_flag='No')
+                a=teachers.count()
+                complete=completed_table.objects.filter(school_id=basic_det.school_id,ofs_flag=False,transfer_flag='No')
+                return render(request,'teachers/teacher_entry_details.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return HttpResponseRedirect('/')
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1353,13 +1561,29 @@ class Teacher_outofservice_create(View):
     #@never_cache
     def get(self,request,**kwargs):
         if request.user.is_authenticated():
-            tid=self.kwargs.get('pk')    
-            teachers=Teacher_detail.objects.get(id=tid) 
-            dategovt=teachers.dofsed
-            staff_uid=teachers.count
-            staff_name=teachers.name
-            basic_det=Basicinfo.objects.get(school_id=teachers.school_id)      
-            return render(request,'teachers/outofservice/teacher_outofservice_form.html',locals())
+            tid=self.kwargs.get('pk')  
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                teachers = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Record DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            school_id =teachers.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+       
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+  
+            
+                dategovt=teachers.dofsed
+                staff_uid=teachers.count
+                staff_name=teachers.name
+            
+                return render(request,'teachers/outofservice/teacher_outofservice_form.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return redirect('teacher_personnel_entry_after',pk=tid)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1394,30 +1618,49 @@ class teacher_promotion(View):
     #@never_cache
     def get(self, request,**kwargs):
         if request.user.is_authenticated():
-            tid=self.kwargs.get('pk')
             
+            tid=self.kwargs.get('pk')  
+            if (Teacher_detail.objects.filter(id=tid)).count()>0:
+                transfer_data = Teacher_detail.objects.get(id=tid)
+            else:
+                messages.info(request,'Teacher DoesNotExist')
+                return HttpResponseRedirect('/')
+
+
+            
+            school_id =transfer_data.school_id 
+            basic_det=Basicinfo.objects.get(school_id=school_id)
+
+
             AEOENTRY=1
-            transfer_data = Teacher_detail.objects.get(id=tid)
+            # transfer_data = Teacher_detail.objects.get(id=tid)
             dategovt=transfer_data.dofsed
             b=transfer_data.designation.id
             a=transfer_data.subject.id
-            if (Basicinfo.objects.filter(school_id=transfer_data.school_id).count())>0:
-                basic_det=Basicinfo.objects.get(school_id=transfer_data.school_id)
-                sch_key = basic_det.id
-                designations=Staff.objects.filter(school_key=sch_key).distinct()
-                desig1={}
-                sub1={}
-                subjects=Desig_subjects.objects.all()
+            if str(basic_det.udise_code)==str(request.user) or str(basic_det.authenticate_1)==str(request.user) or str(basic_det.office_code)==str(request.user):
+
+                if (Basicinfo.objects.filter(school_id=transfer_data.school_id).count())>0:
+                    basic_det=Basicinfo.objects.get(school_id=transfer_data.school_id)
+                    sch_key = basic_det.id
+                    designations=Staff.objects.filter(school_key=sch_key).distinct()
+                    desig1={}
+                    sub1={}
+                    subjects=Desig_subjects.objects.all()
+                    
+                    for i in designations :
+                        if i.post_vac > 0 : 
+                            user_desig=User_desig.objects.get(id=i.post_name_id)
+                            desig_sub=Desig_subjects.objects.get(id=i.post_sub_id)
+                            desig1[i.post_name_id]=user_desig.user_desig
+                            sub1[i.post_sub_id]=desig_sub.desig_sub_name + ' - ' + user_desig.user_desig
+                   
+                form1=Teacher_transfer_history_form()
+                return render(request,'teachers/teacher_promote_within.html',locals())
+            else:
+                messages.success(request, 'you cannot view other records')
+                return HttpResponseRedirect('/')
                 
-                for i in designations :
-                    if i.post_vac > 0 : 
-                        user_desig=User_desig.objects.get(id=i.post_name_id)
-                        desig_sub=Desig_subjects.objects.get(id=i.post_sub_id)
-                        desig1[i.post_name_id]=user_desig.user_desig
-                        sub1[i.post_sub_id]=desig_sub.desig_sub_name + ' - ' + user_desig.user_desig
-               
-            form1=Teacher_transfer_history_form()
-            return render(request,'teachers/teacher_promote_within.html',locals())
+
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
@@ -1496,3 +1739,127 @@ class teacher_promotion(View):
             return redirect('teachers_school_level_name_list',pk=basic_det.udise_code)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+
+class vaccant_post_details_tr(View):
+    #@never_cache
+    def get(self,request,**kwargs):
+        if request.user.is_authenticated():
+            try:
+                udise_code= request.user.username
+                cat_id = self.kwargs.get('cat_id')
+                school_code=cat_id
+
+                offcat_id_list=[2,3,4,5,6,7,8,9,10,11]
+                management_cate_id_list=[1,2]
+                management_id_list=[1,2,3]
+                sch_cate_id_list=[8,9,10,11,12,13]
+                ss=request.user.username
+
+                if cat_id:
+                    basic_det=Basicinfo.objects.get(school_id=cat_id)
+                else:
+                    if request.user.account.user_category_id >= 18:
+                        basic_det=Basicinfo.objects.get(office_code=request.user.username)
+                        office_chk = 'Yes'
+                    else:
+                        office_chk = 'No'
+                        basic_det=Basicinfo.objects.get(udise_code=request.user.username)
+
+                pups_pums=0
+                off_cat=0
+                sch_mgnt=0
+                private_mgnt=0
+                AEOENTRY=0
+                check1=0
+                check2=0
+                check3=0
+                check4=0
+                school_entry=1
+
+                if request.user.account.user_category_id == 2:
+                    teachers_name_list_new = Teacher_detail.objects.filter(school__school_code=school_code, school__block_id= request.user.account.associated_with)
+                elif request.user.account.user_category_id == 5:
+                    teachers_name_list_new = Teacher_detail.objects.filter(school__school_code=school_code, school__block_id= request.user.account.associated_with)
+                elif request.user.account.user_category_id == 6 or request.user.account.user_category_id == 7 or request.user.account.user_category_id == 8 or request.user.account.user_category_id == 12 or request.user.account.user_category_id == 13 or request.user.account.user_category_id == 14:
+                    teachers_name_list_new = Teacher_detail.objects.filter(school__school_code=school_code, school__district_id= request.user.account.associated_with)
+                elif request.user.account.user_category_id == 9 or request.user.account.user_category_id == 10 or request.user.account.user_category_id == 11 or request.user.account.user_category_id == 15 or request.user.account.user_category_id == 16 or request.user.account.user_category_id == 17 or request.user.account.user_category_id == 4:
+                    teachers_name_list_new = Teacher_detail.objects.filter(school__school_code=school_code)    
+                elif request.user.account.user_category_id > 18:
+                    teachers_name_list_new = Teacher_detail.objects.filter(school_id=basic_det.school_id)
+                else:
+                    rec = Teacher_detail.objects.filter(school_id=request.user.account.associated_with).filter(transfer_flag='No').filter(ofs_flag=False)
+                    school_code = request.user.account.associated_with               
+                    # school_data = School.objects.get(id=school_code)               
+                    sch_key = basic_det.id             
+                    if (basic_det.offcat_id):
+                        off_cat=int(basic_det.offcat_id)
+                    if basic_det.manage_cate_id:
+                        private_mgnt=int(basic_det.manage_cate_id)
+                    if private_mgnt==3:
+                        school_id = request.user.account.associated_with 
+                        teachers_name_list_new= private_teachers_detail.objects.filter(school_name=school_id)
+                        return render(request,'teachers/private/teacher_list.html',locals())
+
+                    if basic_det.sch_management_id:
+                        sch_mgnt=int(basic_det.sch_management_id)
+                    if basic_det.sch_cate_id:
+                        pups_pums=int(basic_det.sch_cate_id)
+                  
+                    if off_cat not in offcat_id_list:
+                        check1=1
+
+                    if check1==1:
+                        if private_mgnt==1:
+                            for item in management_id_list:
+                                if item==sch_mgnt:
+                                    check3=1
+                            if check3==1:
+                                if pups_pums in sch_cate_id_list:
+                                    AEOENTRY=1
+                        elif private_mgnt==2:
+                            if pups_pums in sch_cate_id_list:
+                                    AEOENTRY=1
+                        if request.user.is_authenticated():
+                            sch_key = basic_det.id
+                            teaching_rec = Staff.objects.filter(school_key=sch_key)
+                            
+                            if teaching_rec.count()==0:
+                                messages.warning(request,"FIRST MAKE SCHOOL PROFILE " )
+                                return HttpResponseRedirect('/') 
+                            
+                            
+                            # filled_check = Teacher_detail.objects.filter(school_id=basic_det.school_id).filter(transfer_flag='No').filter(ofs_flag=False)    
+                            teaching_sanc=0
+                            teaching_filled=0
+                            teaching_vac=0
+                            nteaching_sanc=0
+                            nteaching_filled=0
+                            nteaching_vac=0
+                            for i in teaching_rec:
+                                if i.staff_cat == 1:
+                                    if i.post_sanc:
+                                        teaching_sanc=teaching_sanc+i.post_sanc
+                                    if i.post_filled:
+                                        teaching_filled=teaching_filled+int(i.post_filled)
+                                    if i.post_vac:
+                                        teaching_vac=teaching_vac +i.post_vac
+                                elif  i.staff_cat == 2:         
+                                    if i.post_sanc:
+                                        nteaching_sanc=nteaching_sanc+i.post_sanc
+                                    if i.post_filled:
+                                        nteaching_filled=nteaching_filled+int(i.post_filled)
+                                    if i.post_vac:
+                                        nteaching_vac=nteaching_vac+int(i.post_vac)  
+                if cat_id:
+                    AEOENTRY=0                   
+                    return render(request,'teachers/vaccant_post_details_tr.html',locals())
+                return render(request,'teachers/vaccant_post_details_tr.html',locals())
+       
+            except Basicinfo.DoesNotExist:
+                school_entry=0
+                messages.info(request," First make School Entry " )
+       
+                return HttpResponseRedirect('/')
+        else:
+            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path)) 

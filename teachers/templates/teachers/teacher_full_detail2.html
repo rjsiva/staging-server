@@ -80,8 +80,8 @@
   <td align="center">{{forloop.counter}}</td> 
     <td> {{ i.designation.designation |upper }}</td>
   <td> {{ i.order_no|upper }}</td>
-  <td> {{ i.order_date |upper }}</td>
-  <td> {{ i.date_of_regularisation |upper}}</td>
+  <td> {{ i.order_date  |date:"d-m-Y" }}</td>
+  <td> {{ i.date_of_regularisation  |date:"d-m-Y"}}</td>
   </tr>
   {% endfor %}
   </table>
@@ -106,8 +106,8 @@
   <td align="center">{{forloop.counter}}</td> 
      <td> {{ i.designation.designation|upper  }}</td>        
         <td> {{ i.order_no|upper }}</td>
-        <td> {{ i.order_date |upper }}</td>
-        <td> {{ i.date_of_clearance |upper }}</td>
+        <td> {{ i.order_date  |date:"d-m-Y" }}</td>
+        <td> {{ i.date_of_clearance  |date:"d-m-Y" }}</td>
     
   </tr>
   {% endfor %}
@@ -136,10 +136,10 @@
   <td align="center">{{forloop.counter}}</td> 
   <td align="center"> {{ i.current_designation.designation |upper}}</td>
   <td align="center"> {{ i.promoted_to |upper }}</td>
-  <td align="center"> {{ i.date_of_relinqui |upper}}</td>
+  <td align="center"> {{ i.date_of_relinqui  |date:"d-m-Y"}}</td>
   <td align="center"> {{ i.order_no |upper}}</td>
-  <td align="center"> {{ i.crucial_date_for_promotion |upper}}</td>
-  <td align="center"> {{ i.promo_next_eligible_date |upper}}</td>
+  <td align="center"> {{ i.crucial_date_for_promotion  |date:"d-m-Y"}}</td>
+  <td align="center"> {{ i.promo_next_eligible_date  |date:"d-m-Y"}}</td>
   </tr>
   {% endfor %}
   </table>
@@ -199,8 +199,8 @@
         <td> {{ i.institution|upper }}</td> 
         <td> {{ i.city|upper }}</td> 
         <td> {{ i.country|upper }}</td> 
-        <td> {{ i.duration_from |upper }}</td> 
-        <td> {{ i.duration_to |upper}}</td> 
+        <td> {{ i.duration_from  |date:"d-m-Y" }}</td> 
+        <td> {{ i.duration_to  |date:"d-m-Y"}}</td> 
               </tr>
               {% endfor %}
             </table>
@@ -231,7 +231,7 @@
         <td> {{ i.year }}</td> 
         <td> {{ i.reg_no|upper }}</td> 
         <td> {{ i.gaz_no |upper}}</td> 
-        <td> {{ i.gaz_date |upper}}</td> 
+        <td> {{ i.gaz_date  |date:"d-m-Y"}}</td> 
         <td> {{ i.page_no }}</td> 
  
   </tr>
